@@ -16,11 +16,16 @@ def validate_yaml_syntax():
     """Validate YAML syntax for all blueprint files"""
     print("🔍 Validating Home Assistant Blueprint YAML syntax...")
     
-    blueprint_files = glob.glob('blueprints/**/*.yaml', recursive=True) + \
-                     glob.glob('blueprints/**/*.yml', recursive=True)
+    # Get the repo root directory (go up two levels from .github/scripts)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(script_dir))
+    blueprints_dir = os.path.join(repo_root, 'blueprints')
+    
+    blueprint_files = glob.glob(os.path.join(blueprints_dir, '**/*.yaml'), recursive=True) + \
+                     glob.glob(os.path.join(blueprints_dir, '**/*.yml'), recursive=True)
     
     if not blueprint_files:
-        print("⚠️  No blueprint files found in blueprints/ directory")
+        print(f"⚠️  No blueprint files found in {blueprints_dir} directory")
         return True
     
     all_valid = True
@@ -49,8 +54,13 @@ def validate_blueprint_schema():
     """Validate Home Assistant Blueprint schema compliance"""
     print("🏠 Validating Home Assistant Blueprint schema...")
     
-    blueprint_files = glob.glob('blueprints/**/*.yaml', recursive=True) + \
-                     glob.glob('blueprints/**/*.yml', recursive=True)
+    # Get the repo root directory (go up two levels from .github/scripts)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(script_dir))
+    blueprints_dir = os.path.join(repo_root, 'blueprints')
+    
+    blueprint_files = glob.glob(os.path.join(blueprints_dir, '**/*.yaml'), recursive=True) + \
+                     glob.glob(os.path.join(blueprints_dir, '**/*.yml'), recursive=True)
     
     required_fields = ['name', 'domain']
     valid_domains = ['automation', 'script', 'template']
@@ -113,8 +123,13 @@ def check_duplicate_names():
     """Check for duplicate blueprint names"""
     print("🔍 Checking for duplicate blueprint names...")
     
-    blueprint_files = glob.glob('blueprints/**/*.yaml', recursive=True) + \
-                     glob.glob('blueprints/**/*.yml', recursive=True)
+    # Get the repo root directory (go up two levels from .github/scripts)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(script_dir))
+    blueprints_dir = os.path.join(repo_root, 'blueprints')
+    
+    blueprint_files = glob.glob(os.path.join(blueprints_dir, '**/*.yaml'), recursive=True) + \
+                     glob.glob(os.path.join(blueprints_dir, '**/*.yml'), recursive=True)
     
     names = {}
     duplicates = []

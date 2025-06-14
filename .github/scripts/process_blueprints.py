@@ -75,12 +75,18 @@ def process_blueprints():
     """Process all blueprints and generate versioned copies"""
     print("📝 Generating semantic versions based on commit history...")
     
+    # Get the repo root directory (go up two levels from .github/scripts)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(script_dir))
+    
     # Create output directory
-    os.makedirs('dist/blueprints', exist_ok=True)
+    dist_dir = os.path.join(repo_root, 'dist', 'blueprints')
+    os.makedirs(dist_dir, exist_ok=True)
     
     blueprint_info = []
-    blueprint_files = glob.glob('blueprints/**/*.yaml', recursive=True) + \
-                     glob.glob('blueprints/**/*.yml', recursive=True)
+    blueprints_dir = os.path.join(repo_root, 'blueprints')
+    blueprint_files = glob.glob(os.path.join(blueprints_dir, '**/*.yaml'), recursive=True) + \
+                     glob.glob(os.path.join(blueprints_dir, '**/*.yml'), recursive=True)
     
     for filepath in blueprint_files:
         try:
@@ -99,8 +105,8 @@ def process_blueprints():
             data['blueprint']['name'] = f'{original_name} v{version}'
             
             # Preserve relative directory structure
-            rel_path = os.path.relpath(filepath, 'blueprints')
-            output_path = os.path.join('dist/blueprints', rel_path)
+            rel_path = os.path.relpath(filepath, blueprints_dir)
+            output_path = os.path.join(dist_dir, rel_path)
             
             # Create output directory
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -150,7 +156,8 @@ def process_blueprints():
             continue
     
     # Save blueprint info for index generation
-    with open('dist/blueprint_info.yaml', 'w') as f:
+    blueprint_info_path = os.path.join(repo_root, 'dist', 'blueprint_info.yaml')
+    with open(blueprint_info_path, 'w') as f:
         yaml.dump(blueprint_info, f, default_flow_style=False)
     
     print(f'📦 Processed {len(blueprint_info)} blueprints')

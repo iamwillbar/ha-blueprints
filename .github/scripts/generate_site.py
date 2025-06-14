@@ -18,7 +18,12 @@ def generate_site():
     print("🌐 Generating GitHub Pages site...")
     
     # Load blueprint info
-    with open('dist/blueprint_info.yaml', 'r') as f:
+    # Get the repo root directory (go up two levels from .github/scripts)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(script_dir))
+    blueprint_info_path = os.path.join(repo_root, 'dist', 'blueprint_info.yaml')
+    
+    with open(blueprint_info_path, 'r') as f:
         blueprints = yaml.safe_load(f) or []
     
     # Get repository info from environment
@@ -47,7 +52,10 @@ def generate_site():
     }
     
     # Set up Jinja2 environment
-    template_dir = os.path.join('.github', 'templates')
+    # Get the repo root directory (go up two levels from .github/scripts)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(script_dir))
+    template_dir = os.path.join(repo_root, '.github', 'templates')
     env = Environment(loader=FileSystemLoader(template_dir))
     
     # Define custom filters
@@ -85,7 +93,8 @@ def generate_site():
     )
     
     # Write HTML file
-    with open('dist/index.html', 'w') as f:
+    output_path = os.path.join(repo_root, 'dist', 'index.html')
+    with open(output_path, 'w') as f:
         f.write(html_content)
     
     print(f'✅ Generated index.html with {len(blueprints)} blueprints')
