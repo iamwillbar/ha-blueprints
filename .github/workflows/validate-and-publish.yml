@@ -72,7 +72,7 @@ jobs:
   build-and-deploy:
     name: Build and Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: validate
     environment:
       name: github-pages
@@ -119,7 +119,7 @@ jobs:
   notify-success:
     name: Notify Success
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [validate, build-and-deploy]
     steps:
       - name: Success notification
