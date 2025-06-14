@@ -56,16 +56,54 @@ jobs:
 
       - name: Validate YAML syntax
         run: |
-          echo "🔍 Validating YAML syntax..."
+          echo "🔍 Validating Home Assistant Blueprint YAML syntax..."
           find blueprints -name "*.yaml" -o -name "*.yml" | while read file; do
             echo "Checking: $file"
             python -c "
           import yaml
           import sys
+          import re
+          
+          class HomeAssistantLoader(yaml.SafeLoader):
+              '''Custom YAML loader that handles Home Assistant specific tags'''
+              pass
+          
+          def input_constructor(loader, node):
+              '''Handle !input tags'''
+              if isinstance(node, yaml.ScalarNode):
+                  return f'INPUT:{loader.construct_scalar(node)}'
+              elif isinstance(node, yaml.MappingNode):
+                  return {f'INPUT:{k}': v for k, v in loader.construct_mapping(node).items()}
+              elif isinstance(node, yaml.SequenceNode):
+                  return [f'INPUT:{item}' for item in loader.construct_sequence(node)]
+              return loader.construct_object(node)
+          
+          def include_constructor(loader, node):
+              '''Handle !include tags'''
+              return f'INCLUDE:{loader.construct_scalar(node)}'
+          
+          def secret_constructor(loader, node):
+              '''Handle !secret tags'''
+              return f'SECRET:{loader.construct_scalar(node)}'
+          
+          def env_var_constructor(loader, node):
+              '''Handle !env_var tags'''
+              return f'ENV_VAR:{loader.construct_scalar(node)}'
+          
+          # Register constructors for Home Assistant tags
+          HomeAssistantLoader.add_constructor('!input', input_constructor)
+          HomeAssistantLoader.add_constructor('!include', include_constructor)
+          HomeAssistantLoader.add_constructor('!secret', secret_constructor)
+          HomeAssistantLoader.add_constructor('!env_var', env_var_constructor)
+          
           try:
               with open('$file', 'r') as f:
-                  yaml.safe_load(f)
-              print('✅ Valid YAML: $file')
+                  content = f.read()
+                  
+              # Parse with Home Assistant loader
+              yaml.load(content, Loader=HomeAssistantLoader)
+              print('✅ Valid Home Assistant Blueprint YAML: $file')
+              
           except yaml.YAMLError as e:
               print('❌ Invalid YAML: $file - Error: {}'.format(e))
               sys.exit(1)
@@ -84,12 +122,47 @@ jobs:
           import yaml
           import sys
           
+          class HomeAssistantLoader(yaml.SafeLoader):
+              '''Custom YAML loader that handles Home Assistant specific tags'''
+              pass
+          
+          def input_constructor(loader, node):
+              '''Handle !input tags'''
+              if isinstance(node, yaml.ScalarNode):
+                  return f'INPUT:{loader.construct_scalar(node)}'
+              elif isinstance(node, yaml.MappingNode):
+                  return {f'INPUT:{k}': v for k, v in loader.construct_mapping(node).items()}
+              elif isinstance(node, yaml.SequenceNode):
+                  return [f'INPUT:{item}' for item in loader.construct_sequence(node)]
+              return loader.construct_object(node)
+          
+          def include_constructor(loader, node):
+              '''Handle !include tags'''
+              return f'INCLUDE:{loader.construct_scalar(node)}'
+          
+          def secret_constructor(loader, node):
+              '''Handle !secret tags'''
+              return f'SECRET:{loader.construct_scalar(node)}'
+          
+          def env_var_constructor(loader, node):
+              '''Handle !env_var tags'''
+              return f'ENV_VAR:{loader.construct_scalar(node)}'
+          
+          # Register constructors for Home Assistant tags
+          HomeAssistantLoader.add_constructor('!input', input_constructor)
+          HomeAssistantLoader.add_constructor('!include', include_constructor)
+          HomeAssistantLoader.add_constructor('!secret', secret_constructor)
+          HomeAssistantLoader.add_constructor('!env_var', env_var_constructor)
+          
           required_fields = ['name', 'domain']
           valid_domains = ['automation', 'script', 'template']
           
           try:
               with open('$file', 'r') as f:
-                  data = yaml.safe_load(f)
+                  content = f.read()
+              
+              # Parse with Home Assistant loader
+              data = yaml.load(content, Loader=HomeAssistantLoader)
               
               if not isinstance(data, dict):
                   print('❌ Blueprint must be a YAML object: $file')
@@ -140,6 +213,38 @@ jobs:
           import sys
           import os
           
+          class HomeAssistantLoader(yaml.SafeLoader):
+              '''Custom YAML loader that handles Home Assistant specific tags'''
+              pass
+          
+          def input_constructor(loader, node):
+              '''Handle !input tags'''
+              if isinstance(node, yaml.ScalarNode):
+                  return f'INPUT:{loader.construct_scalar(node)}'
+              elif isinstance(node, yaml.MappingNode):
+                  return {f'INPUT:{k}': v for k, v in loader.construct_mapping(node).items()}
+              elif isinstance(node, yaml.SequenceNode):
+                  return [f'INPUT:{item}' for item in loader.construct_sequence(node)]
+              return loader.construct_object(node)
+          
+          def include_constructor(loader, node):
+              '''Handle !include tags'''
+              return f'INCLUDE:{loader.construct_scalar(node)}'
+          
+          def secret_constructor(loader, node):
+              '''Handle !secret tags'''
+              return f'SECRET:{loader.construct_scalar(node)}'
+          
+          def env_var_constructor(loader, node):
+              '''Handle !env_var tags'''
+              return f'ENV_VAR:{loader.construct_scalar(node)}'
+          
+          # Register constructors for Home Assistant tags
+          HomeAssistantLoader.add_constructor('!input', input_constructor)
+          HomeAssistantLoader.add_constructor('!include', include_constructor)
+          HomeAssistantLoader.add_constructor('!secret', secret_constructor)
+          HomeAssistantLoader.add_constructor('!env_var', env_var_constructor)
+          
           names = {}
           duplicates = []
           
@@ -149,7 +254,10 @@ jobs:
                       filepath = os.path.join(root, file)
                       try:
                           with open(filepath, 'r') as f:
-                              data = yaml.safe_load(f)
+                              content = f.read()
+                          
+                          # Parse with Home Assistant loader
+                          data = yaml.load(content, Loader=HomeAssistantLoader)
                           
                           if 'blueprint' in data and 'name' in data['blueprint']:
                               name = data['blueprint']['name']
@@ -205,6 +313,38 @@ jobs:
           import subprocess
           import re
           from pathlib import Path
+          
+          class HomeAssistantLoader(yaml.SafeLoader):
+              '''Custom YAML loader that handles Home Assistant specific tags'''
+              pass
+          
+          def input_constructor(loader, node):
+              '''Handle !input tags'''
+              if isinstance(node, yaml.ScalarNode):
+                  return f'INPUT:{loader.construct_scalar(node)}'
+              elif isinstance(node, yaml.MappingNode):
+                  return {f'INPUT:{k}': v for k, v in loader.construct_mapping(node).items()}
+              elif isinstance(node, yaml.SequenceNode):
+                  return [f'INPUT:{item}' for item in loader.construct_sequence(node)]
+              return loader.construct_object(node)
+          
+          def include_constructor(loader, node):
+              '''Handle !include tags'''
+              return f'INCLUDE:{loader.construct_scalar(node)}'
+          
+          def secret_constructor(loader, node):
+              '''Handle !secret tags'''
+              return f'SECRET:{loader.construct_scalar(node)}'
+          
+          def env_var_constructor(loader, node):
+              '''Handle !env_var tags'''
+              return f'ENV_VAR:{loader.construct_scalar(node)}'
+          
+          # Register constructors
+          HomeAssistantLoader.add_constructor('!input', input_constructor)
+          HomeAssistantLoader.add_constructor('!include', include_constructor)
+          HomeAssistantLoader.add_constructor('!secret', secret_constructor)
+          HomeAssistantLoader.add_constructor('!env_var', env_var_constructor)
           
           def get_git_commits_for_file(filepath):
               '''Get commit history for a specific file'''
@@ -271,7 +411,10 @@ jobs:
                           
                           try:
                               with open(filepath, 'r') as f:
-                                  data = yaml.safe_load(f)
+                                  content = f.read()
+                              
+                              # Parse with Home Assistant loader
+                              data = yaml.load(content, Loader=HomeAssistantLoader)
                               
                               if 'blueprint' not in data:
                                   continue
@@ -291,9 +434,30 @@ jobs:
                               # Create output directory
                               os.makedirs(os.path.dirname(output_path), exist_ok=True)
                               
-                              # Write versioned blueprint
+                              # Write versioned blueprint (preserve original format)
+                              with open(filepath, 'r') as f:
+                                  original_content = f.read()
+                              
+                              # Simple string replacement to update the name while preserving format
+                              updated_content = original_content.replace(
+                                  f'name: {original_name}',
+                                  f'name: {original_name} v{version}',
+                                  1  # Only replace first occurrence
+                              )
+                              # Also handle quoted names
+                              updated_content = updated_content.replace(
+                                  f'name: \"{original_name}\"',
+                                  f'name: \"{original_name} v{version}\"',
+                                  1
+                              )
+                              updated_content = updated_content.replace(
+                                  f\"name: '{original_name}'\",
+                                  f\"name: '{original_name} v{version}'\",
+                                  1
+                              )
+                              
                               with open(output_path, 'w') as f:
-                                  yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+                                  f.write(updated_content)
                               
                               # Collect info for index
                               blueprint_info.append({

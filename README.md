@@ -5,6 +5,7 @@ A comprehensive collection of high-quality Home Assistant blueprints with automa
 ## 🌟 Features
 
 - **📋 Comprehensive Validation**: All blueprints are automatically validated for YAML syntax and Home Assistant schema compliance
+- **🎯 Home Assistant YAML Support**: Full support for `!input`, `!include`, `!secret`, and `!env_var` tags
 - **🔢 Semantic Versioning**: Each blueprint gets automatic version numbers based on commit history using conventional commits
 - **🚀 Easy Installation**: One-click import buttons that work directly with Home Assistant
 - **📚 Beautiful Catalog**: Auto-generated GitHub Pages site showcasing all blueprints
@@ -78,15 +79,15 @@ See [`.copilot-instructions.md`](.copilot-instructions.md) for comprehensive dev
 ## 🤖 Automated Workflow
 
 ### On Pull Requests
-- ✅ YAML syntax validation
-- ✅ Home Assistant schema validation
+- ✅ YAML syntax validation with Home Assistant tag support (`!input`, `!include`, `!secret`, `!env_var`)
+- ✅ Home Assistant blueprint schema validation
 - ✅ Duplicate name checking
 - ✅ Best practice compliance
 
 ### On Main Branch Push
 - ✅ All validation checks
 - 🔢 Semantic version generation based on commit history
-- 📦 Blueprint processing with version injection
+- 📦 Blueprint processing with version injection (preserves Home Assistant tags)
 - 🌐 GitHub Pages site generation with import buttons
 - 🚀 Automatic deployment
 
