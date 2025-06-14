@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Assistant Blueprints</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .category {
+            background: rgba(255, 255, 255, 0.95);
+            margin-bottom: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .category-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .blueprints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .blueprint-card {
+            border: 1px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 20px;
+            background: white;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .blueprint-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .blueprint-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        
+        .blueprint-version {
+            background: #3498db;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        
+        .blueprint-domain {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
+        .blueprint-domain.automation { background: #27ae60; }
+        .blueprint-domain.script { background: #f39c12; }
+        .blueprint-domain.template { background: #9b59b6; }
+        
+        .blueprint-description {
+            color: #7f8c8d;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .blueprint-meta {
+            font-size: 0.9em;
+            color: #95a5a6;
+            margin-bottom: 15px;
+        }
+        
+        .blueprint-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2980b9, #2c3e50);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            color: #7f8c8d;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2em; }
+            .stats { flex-direction: column; gap: 15px; }
+            .blueprints-grid { grid-template-columns: 1fr; }
+            .blueprint-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Home Assistant Blueprints</h1>
+            <p>Ready-to-use automation blueprints for your smart home</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number">{{ stats.total_blueprints }}</div>
+                    <div class="stat-label">Total Blueprints</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">{{ stats.total_categories }}</div>
+                    <div class="stat-label">Categories</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">{{ stats.total_domains }}</div>
+                    <div class="stat-label">Domains</div>
+                </div>
+            </div>
+        </div>
+
+        {% for category, category_blueprints in categories.items() %}
+        <div class="category">
+            <div class="category-header">{{ category.title() }}</div>
+            <div class="blueprints-grid">
+                {% for bp in category_blueprints %}
+                {% set raw_url = 'https://raw.githubusercontent.com/' + repo_owner + '/' + repo_name + '/gh-pages/blueprints/' + bp.file_path | url_quote %}
+                {% set import_url = 'https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=' + raw_url | url_quote %}
+                {% set description = bp.description | clean_description | truncate_description(200) | escape_html %}
+                {% set bp_name = bp.name | escape_html %}
+                <div class="blueprint-card">
+                    <div class="blueprint-version">v{{ bp.version }}</div>
+                    <div class="blueprint-domain {{ bp.domain }}">{{ bp.domain.title() }}</div>
+                    <div class="blueprint-title">{{ bp_name }}</div>
+                    <div class="blueprint-description">{{ description }}</div>
+                    <div class="blueprint-meta">
+                        {% if bp.author %}By: {{ bp.author }} • {% endif %}
+                        {% if bp.min_version %}Requires HA {{ bp.min_version }}+{% else %}No minimum version specified{% endif %}
+                    </div>
+                    <div class="blueprint-actions">
+                        <a href="{{ import_url }}" class="btn btn-primary" target="_blank">
+                            🚀 Import to HA
+                        </a>
+                        <a href="{{ raw_url }}" class="btn btn-secondary" target="_blank">
+                            📄 View YAML
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="footer">
+            <p>Generated on {{ stats.generation_time }} • 
+            <a href="https://github.com/{{ repo_owner }}/{{ repo_name }}" target="_blank">View on GitHub</a></p>
+            <p>Click "🚀 Import to HA" to add blueprints directly to your Home Assistant instance</p>
+        </div>
+    </div>
+</body>
+</html>
