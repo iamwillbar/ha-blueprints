@@ -28,134 +28,118 @@ blueprint:
   homeassistant:
     min_version: "2024.6.0"
   input:
-    # Main Configuration Section
-    main_config:
-      name: "Main Configuration"
-      icon: "mdi:thermometer"
-      description: "Primary settings for temperature monitoring"
-      input:
-        temperature_sensor:
-          name: Temperature Sensor
-          description: The temperature sensor to monitor
-          selector:
-            entity:
-              filter:
-                domain: sensor
-                device_class: temperature
-        
-        min_temperature:
-          name: Minimum Temperature
-          description: Minimum allowed temperature (in the unit of your sensor)
-          selector:
-            number:
-              min: -50
-              max: 150
-              step: 0.1
-              mode: box
-              unit_of_measurement: "°"
-        
-        max_temperature:
-          name: Maximum Temperature
-          description: Maximum allowed temperature (in the unit of your sensor)
-          selector:
-            number:
-              min: -50
-              max: 150
-              step: 0.1
-              mode: box
-              unit_of_measurement: "°"
-        
-        location_name:
-          name: Location Name
-          description: Descriptive name for the monitored location (e.g., "Kitchen Refrigerator")
-          default: "Temperature Sensor"
-          selector:
-            text:
+    # Temperature Sensor Configuration
+    temperature_sensor:
+      name: Temperature Sensor
+      description: The temperature sensor to monitor
+      selector:
+        entity:
+          filter:
+            domain: sensor
+            device_class: temperature
     
-    # Notification Settings Section
-    notification_config:
-      name: "Notification Settings"
-      icon: "mdi:bell-alert"
-      description: "Configure how and when notifications are sent"
-      input:
-        notification_service:
-          name: Notification Service
-          description: The notification service to use (e.g., notify.mobile_app_your_phone, notify.persistent_notification)
-          default: "notify.persistent_notification"
-          selector:
-            select:
-              custom_value: true
-              options:
-                - "notify.persistent_notification"
-                - "notify.mobile_app_iphone"
-                - "notify.mobile_app_android"
-                - "notify.pushbullet"
-                - "notify.telegram"
-        
-        time_threshold:
-          name: Time Threshold
-          description: How long temperature must be outside range before triggering notification
-          default:
-            minutes: 5
-          selector:
-            duration:
-        
-        notify_on_recovery:
-          name: Notify on Recovery
-          description: Send notification when temperature returns to normal range
-          default: true
-          selector:
-            boolean:
+    min_temperature:
+      name: Minimum Temperature
+      description: Minimum allowed temperature (in the unit of your sensor)
+      selector:
+        number:
+          min: -50
+          max: 150
+          step: 0.1
+          mode: box
+          unit_of_measurement: "°"
     
-    # Advanced Settings Section
-    advanced_settings:
-      name: "Advanced Settings"
-      icon: "mdi:tune"
-      description: "Optional advanced configuration for repeat notifications"
-      collapsed: true
-      input:
-        repeat_notifications:
-          name: Enable Repeat Notifications
-          description: Send additional notifications while temperature remains out of range
-          default: false
-          selector:
-            boolean:
-        
-        repeat_interval:
-          name: Repeat Notification Interval
-          description: How often to repeat notifications while out of range
-          default:
-            minutes: 30
-          selector:
-            duration:
+    max_temperature:
+      name: Maximum Temperature
+      description: Maximum allowed temperature (in the unit of your sensor)
+      selector:
+        number:
+          min: -50
+          max: 150
+          step: 0.1
+          mode: box
+          unit_of_measurement: "°"
+    
+    location_name:
+      name: Location Name
+      description: Descriptive name for the monitored location (e.g., "Kitchen Refrigerator")
+      default: "Temperature Sensor"
+      selector:
+        text:
+    
+    # Notification Configuration
+    notification_service:
+      name: Notification Service
+      description: The notification service to use (e.g., notify.mobile_app_your_phone, notify.persistent_notification)
+      default: "notify.persistent_notification"
+      selector:
+        select:
+          custom_value: true
+          options:
+            - "notify.persistent_notification"
+            - "notify.mobile_app_iphone"
+            - "notify.mobile_app_android"
+            - "notify.pushbullet"
+            - "notify.telegram"
+    
+    time_threshold:
+      name: Time Threshold
+      description: How long temperature must be outside range before triggering notification
+      default:
+        minutes: 5
+      selector:
+        duration:
+    
+    notify_on_recovery:
+      name: Notify on Recovery
+      description: Send notification when temperature returns to normal range
+      default: true
+      selector:
+        boolean:
+    
+    # Advanced Settings
+    repeat_notifications:
+      name: Enable Repeat Notifications
+      description: Send additional notifications while temperature remains out of range
+      default: false
+      selector:
+        boolean:
+    
+    repeat_interval:
+      name: Repeat Notification Interval
+      description: How often to repeat notifications while out of range
+      default:
+        minutes: 30
+      selector:
+        duration:
 
 variables:
-  sensor_name: !input main_config.temperature_sensor
-  min_temp: !input main_config.min_temperature
-  max_temp: !input main_config.max_temperature
-  location: !input main_config.location_name
+  sensor_name: !input temperature_sensor
+  min_temp: !input min_temperature
+  max_temp: !input max_temperature
+  location: !input location_name
   current_temp: "{{ states(sensor_name) | float }}"
   temp_unit: "{{ state_attr(sensor_name, 'unit_of_measurement') }}"
 
 trigger:
   # Trigger when temperature goes outside range
   - platform: numeric_state
-    entity_id: !input main_config.temperature_sensor
-    below: !input main_config.min_temperature
-    for: !input notification_config.time_threshold
+    entity_id: !input temperature_sensor
+    below: !input min_temperature
+    for: !input time_threshold
     id: "below_range"
   
   - platform: numeric_state
-    entity_id: !input main_config.temperature_sensor
-    above: !input main_config.max_temperature
-    for: !input notification_config.time_threshold
+    entity_id: !input temperature_sensor
+    above: !input max_temperature
+    for: !input time_threshold
     id: "above_range"
   
   # Trigger when temperature returns to normal range
   - platform: numeric_state
-    entity_id: !input main_config.temperature_sensor
-    above: !input main_config.min_temperature
-    below: !input main_config.max_temperature
+    entity_id: !input temperature_sensor
+    above: !input min_temperature
+    below: !input max_temperature
     id: "back_in_range"
 
 condition: []
@@ -167,7 +151,7 @@ action:
           - condition: trigger
             id: "below_range"
         sequence:
-          - service: !input notification_config.notification_service
+          - service: !input notification_service
             data:
               title: "🥶 Temperature Alert: {{ location }}"
               message: >
@@ -182,21 +166,21 @@ action:
           # Set up repeat notifications if enabled
           - if:
               - condition: template
-                value_template: !input advanced_settings.repeat_notifications
+                value_template: !input repeat_notifications
             then:
               - repeat:
                   while:
                     - condition: numeric_state
-                      entity_id: !input main_config.temperature_sensor
-                      below: !input main_config.min_temperature
+                      entity_id: !input temperature_sensor
+                      below: !input min_temperature
                   sequence:
-                    - delay: !input advanced_settings.repeat_interval
+                    - delay: !input repeat_interval
                     - if:
                         - condition: numeric_state
-                          entity_id: !input main_config.temperature_sensor
-                          below: !input main_config.min_temperature
+                          entity_id: !input temperature_sensor
+                          below: !input min_temperature
                       then:
-                        - service: !input notification_config.notification_service
+                        - service: !input notification_service
                           data:
                             title: "🥶 Temperature Still Low: {{ location }}"
                             message: >
@@ -210,7 +194,7 @@ action:
           - condition: trigger
             id: "above_range"
         sequence:
-          - service: !input notification_config.notification_service
+          - service: !input notification_service
             data:
               title: "🔥 Temperature Alert: {{ location }}"
               message: >
@@ -225,21 +209,21 @@ action:
           # Set up repeat notifications if enabled
           - if:
               - condition: template
-                value_template: !input advanced_settings.repeat_notifications
+                value_template: !input repeat_notifications
             then:
               - repeat:
                   while:
                     - condition: numeric_state
-                      entity_id: !input main_config.temperature_sensor
-                      above: !input main_config.max_temperature
+                      entity_id: !input temperature_sensor
+                      above: !input max_temperature
                   sequence:
-                    - delay: !input advanced_settings.repeat_interval
+                    - delay: !input repeat_interval
                     - if:
                         - condition: numeric_state
-                          entity_id: !input main_config.temperature_sensor
-                          above: !input main_config.max_temperature
+                          entity_id: !input temperature_sensor
+                          above: !input max_temperature
                       then:
-                        - service: !input notification_config.notification_service
+                        - service: !input notification_service
                           data:
                             title: "🔥 Temperature Still High: {{ location }}"
                             message: >
@@ -253,9 +237,9 @@ action:
           - condition: trigger
             id: "back_in_range"
           - condition: template
-            value_template: !input notification_config.notify_on_recovery
+            value_template: !input notify_on_recovery
         sequence:
-          - service: !input notification_config.notification_service
+          - service: !input notification_service
             data:
               title: "✅ Temperature Normal: {{ location }}"
               message: >
