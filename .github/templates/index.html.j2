@@ -255,7 +255,7 @@
             <div class="category-header">{{ category.title() }}</div>
             <div class="blueprints-grid">
                 {% for bp in category_blueprints %}
-                {% set raw_url = 'https://raw.githubusercontent.com/' + repo_owner + '/' + repo_name + '/gh-pages/blueprints/' + bp.file_path | url_quote %}
+                {% set raw_url = 'https://' + repo_owner + '.github.io/' + repo_name + '/blueprints/' + bp.file_path | url_quote %}
                 {% set import_url = 'https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=' + raw_url | url_quote %}
                 {% set description = bp.description | clean_description | truncate_description(200) | escape_html %}
                 {% set bp_name = bp.name | escape_html %}
