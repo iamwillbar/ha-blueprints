@@ -333,33 +333,33 @@ blueprint:
               unit_of_measurement: "ppm"
 
 variables:
-  co2_entity: !input main_config.co2_sensor
-  co_entity: !input main_config.co_sensor
-  pm25_entity: !input main_config.pm25_sensor
-  voc_entity: !input main_config.voc_sensor
-  ammonia_entity: !input optional_sensors.ammonia_sensor
-  ethanol_entity: !input optional_sensors.ethanol_sensor
-  methane_entity: !input optional_sensors.methane_sensor
-  hydrogen_entity: !input optional_sensors.hydrogen_sensor
-  nitrogen_dioxide_entity: !input optional_sensors.nitrogen_dioxide_sensor
-  notification_target: !input notification_config.notification_service
-  device_area: !input main_config.device_location
-  co2_limit: !input threshold_config.co2_threshold
-  co2_clear: !input threshold_config.co2_clear_threshold
-  pm25_limit: !input threshold_config.pm25_threshold
-  pm25_clear: !input threshold_config.pm25_clear_threshold
-  voc_limit: !input threshold_config.voc_threshold
-  voc_clear: !input threshold_config.voc_clear_threshold
-  co_warning_limit: !input threshold_config.co_warning_threshold
-  co_critical_limit: !input threshold_config.co_critical_threshold
-  co_clear_limit: !input threshold_config.co_clear_threshold
-  ammonia_limit: !input threshold_config.ammonia_threshold
-  ethanol_limit: !input threshold_config.ethanol_threshold
-  methane_limit: !input threshold_config.methane_threshold
-  hydrogen_limit: !input threshold_config.hydrogen_threshold
-  nitrogen_dioxide_limit: !input threshold_config.nitrogen_dioxide_threshold
-  repeat_interval: !input notification_config.critical_alert_interval
-  debug_enabled: !input notification_config.enable_debug_mode
+  co2_entity: !input co2_sensor
+  co_entity: !input co_sensor
+  pm25_entity: !input pm25_sensor
+  voc_entity: !input voc_sensor
+  ammonia_entity: !input ammonia_sensor
+  ethanol_entity: !input ethanol_sensor
+  methane_entity: !input methane_sensor
+  hydrogen_entity: !input hydrogen_sensor
+  nitrogen_dioxide_entity: !input nitrogen_dioxide_sensor
+  notification_target: !input notification_service
+  device_area: !input device_location
+  co2_limit: !input co2_threshold
+  co2_clear: !input co2_clear_threshold
+  pm25_limit: !input pm25_threshold
+  pm25_clear: !input pm25_clear_threshold
+  voc_limit: !input voc_threshold
+  voc_clear: !input voc_clear_threshold
+  co_warning_limit: !input co_warning_threshold
+  co_critical_limit: !input co_critical_threshold
+  co_clear_limit: !input co_clear_threshold
+  ammonia_limit: !input ammonia_threshold
+  ethanol_limit: !input ethanol_threshold
+  methane_limit: !input methane_threshold
+  hydrogen_limit: !input hydrogen_threshold
+  nitrogen_dioxide_limit: !input nitrogen_dioxide_threshold
+  repeat_interval: !input critical_alert_interval
+  debug_enabled: !input enable_debug_mode
 
 mode: parallel
 max: 20
@@ -367,85 +367,85 @@ max: 20
 trigger:
   # CO2 monitoring
   - platform: numeric_state
-    entity_id: !input main_config.co2_sensor
-    above: !input threshold_config.co2_threshold
+    entity_id: !input co2_sensor
+    above: !input co2_threshold
     id: co2_high
   
   - platform: numeric_state
-    entity_id: !input main_config.co2_sensor
-    below: !input threshold_config.co2_clear_threshold
+    entity_id: !input co2_sensor
+    below: !input co2_clear_threshold
     id: co2_normal
   
   # PM2.5 monitoring
   - platform: numeric_state
-    entity_id: !input main_config.pm25_sensor
-    above: !input threshold_config.pm25_threshold
+    entity_id: !input pm25_sensor
+    above: !input pm25_threshold
     id: pm25_high
   
   - platform: numeric_state
-    entity_id: !input main_config.pm25_sensor
-    below: !input threshold_config.pm25_clear_threshold
+    entity_id: !input pm25_sensor
+    below: !input pm25_clear_threshold
     id: pm25_normal
   
   # VOC monitoring
   - platform: numeric_state
-    entity_id: !input main_config.voc_sensor
-    above: !input threshold_config.voc_threshold
+    entity_id: !input voc_sensor
+    above: !input voc_threshold
     id: voc_high
   
   - platform: numeric_state
-    entity_id: !input main_config.voc_sensor
-    below: !input threshold_config.voc_clear_threshold
+    entity_id: !input voc_sensor
+    below: !input voc_clear_threshold
     id: voc_normal
   
   # Critical CO monitoring - warning level
   - platform: numeric_state
-    entity_id: !input main_config.co_sensor
-    above: !input threshold_config.co_warning_threshold
-    below: !input threshold_config.co_critical_threshold
+    entity_id: !input co_sensor
+    above: !input co_warning_threshold
+    below: !input co_critical_threshold
     id: co_warning
   
   # Critical CO monitoring - critical level
   - platform: numeric_state
-    entity_id: !input main_config.co_sensor
-    above: !input threshold_config.co_critical_threshold  
+    entity_id: !input co_sensor
+    above: !input co_critical_threshold  
     id: co_critical
   
   # CO back to normal
   - platform: numeric_state
-    entity_id: !input main_config.co_sensor
-    below: !input threshold_config.co_clear_threshold
+    entity_id: !input co_sensor
+    below: !input co_clear_threshold
     id: co_normal
   
   # Additional gas sensors (if MiCS-4514 sensor is present)
   - platform: numeric_state
-    entity_id: !input optional_sensors.ammonia_sensor
-    above: !input threshold_config.ammonia_threshold
+    entity_id: !input ammonia_sensor
+    above: !input ammonia_threshold
     id: ammonia_high
   
   - platform: numeric_state
-    entity_id: !input optional_sensors.ethanol_sensor
-    above: !input threshold_config.ethanol_threshold
+    entity_id: !input ethanol_sensor
+    above: !input ethanol_threshold
     id: ethanol_high
   
   - platform: numeric_state
-    entity_id: !input optional_sensors.methane_sensor
-    above: !input threshold_config.methane_threshold
+    entity_id: !input methane_sensor
+    above: !input methane_threshold
     id: methane_high
   
   - platform: numeric_state
-    entity_id: !input optional_sensors.hydrogen_sensor
-    above: !input threshold_config.hydrogen_threshold
+    entity_id: !input hydrogen_sensor
+    above: !input hydrogen_threshold
     id: hydrogen_high
   
   - platform: numeric_state
-    entity_id: !input optional_sensors.nitrogen_dioxide_sensor
-    above: !input threshold_config.nitrogen_dioxide_threshold
+    entity_id: !input nitrogen_dioxide_sensor
+    above: !input nitrogen_dioxide_threshold
     id: nitrogen_dioxide_high
   
   # Repeat critical CO alerts
   - platform: time_pattern
-    minutes: !input notification_config.critical_alert_interval
+    minutes: !input critical_alert_interval
     id: co_repeat_check
 
 condition: []
