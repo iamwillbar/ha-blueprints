@@ -182,7 +182,7 @@ blueprint:
       input:
         co2_threshold:
           name: CO2 Alert Threshold
-          description: CO2 level that triggers an alert (ASHRAE recommendation: 1000 ppm)
+          description: "CO2 level that triggers an alert (ASHRAE recommendation: 1000 ppm)"
           default: 1000
           selector:
             number:
@@ -193,7 +193,7 @@ blueprint:
         
         co2_clear_threshold:
           name: CO2 Clear Threshold
-          description: CO2 level below which alerts clear (prevents flickering)
+          description: "CO2 level below which alerts clear (prevents flickering)"
           default: 950
           selector:
             number:
@@ -204,7 +204,7 @@ blueprint:
         
         pm25_threshold:
           name: PM2.5 Alert Threshold
-          description: PM2.5 level that triggers an alert (EPA unhealthy: 35 µg/m³)
+          description: "PM2.5 level that triggers an alert (EPA unhealthy: 35 µg/m³)"
           default: 35
           selector:
             number:
@@ -215,7 +215,7 @@ blueprint:
         
         pm25_clear_threshold:
           name: PM2.5 Clear Threshold
-          description: PM2.5 level below which alerts clear
+          description: "PM2.5 level below which alerts clear"
           default: 30
           selector:
             number:
@@ -226,7 +226,7 @@ blueprint:
         
         voc_threshold:
           name: VOC Alert Threshold
-          description: SEN55 VOC level that triggers an alert (poor air quality: 250)
+          description: "SEN55 VOC level that triggers an alert (poor air quality: 250)"
           default: 250
           selector:
             number:
@@ -236,7 +236,7 @@ blueprint:
         
         voc_clear_threshold:
           name: VOC Clear Threshold
-          description: SEN55 VOC level below which alerts clear
+          description: "SEN55 VOC level below which alerts clear"
           default: 200
           selector:
             number:
@@ -246,7 +246,7 @@ blueprint:
         
         co_warning_threshold:
           name: CO Warning Threshold
-          description: Carbon monoxide level for warning alerts
+          description: "Carbon monoxide level for warning alerts"
           default: 30
           selector:
             number:
@@ -257,7 +257,7 @@ blueprint:
         
         co_critical_threshold:
           name: CO Critical Threshold
-          description: Carbon monoxide level for critical alerts (UL standard: 70 ppm)
+          description: "Carbon monoxide level for critical alerts (UL standard: 70 ppm)"
           default: 70
           selector:
             number:
@@ -268,7 +268,7 @@ blueprint:
         
         co_clear_threshold:
           name: CO Clear Threshold
-          description: CO level below which all CO alerts clear
+          description: "CO level below which all CO alerts clear"
           default: 25
           selector:
             number:
@@ -279,7 +279,7 @@ blueprint:
         
         ammonia_threshold:
           name: Ammonia Alert Threshold
-          description: Ammonia level that triggers an alert
+          description: "Ammonia level that triggers an alert"
           default: 25
           selector:
             number:
@@ -290,7 +290,7 @@ blueprint:
         
         ethanol_threshold:
           name: Ethanol Alert Threshold
-          description: Ethanol level that triggers an alert
+          description: "Ethanol level that triggers an alert"
           default: 500
           selector:
             number:
@@ -301,7 +301,7 @@ blueprint:
         
         methane_threshold:
           name: Methane Alert Threshold
-          description: Methane level that triggers an alert (MiCS sensor has known reliability issues)
+          description: "Methane level that triggers an alert (MiCS sensor has known reliability issues)"
           default: 1000
           selector:
             number:
@@ -312,7 +312,7 @@ blueprint:
         
         hydrogen_threshold:
           name: Hydrogen Alert Threshold
-          description: Hydrogen level that triggers an alert
+          description: "Hydrogen level that triggers an alert"
           default: 1000
           selector:
             number:
@@ -323,7 +323,7 @@ blueprint:
         
         nitrogen_dioxide_threshold:
           name: Nitrogen Dioxide Alert Threshold
-          description: Nitrogen dioxide level that triggers an alert
+          description: "Nitrogen dioxide level that triggers an alert"
           default: 0.5
           selector:
             number:
