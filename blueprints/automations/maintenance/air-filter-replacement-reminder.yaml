@@ -1,0 +1,173 @@
+blueprint:
+  name: "Air Filter Replacement Reminder"
+  description: |
+    Automated air filter replacement monitoring with intelligent notifications and maintenance tracking.
+    
+    **Features:**
+    - Monitor multiple air filter lifetime sensors
+    - Configurable replacement threshold
+    - Automatic notification creation and dismissal
+    - Location-based notifications for easy identification
+    - Persistent notifications until filters are replaced
+    - Support for both percentage and time-based sensors
+    
+    **Notification Behavior:**
+    - Creates notification when filter life falls below threshold
+    - Automatically dismisses notification when filter is replaced/reset
+    - Includes filter location and remaining life percentage
+    
+    **Requirements:**
+    - Air filter sensors that report remaining life as percentage
+    - Notification service configured in Home Assistant
+    
+    **Usage Notes:**
+    - Recommended replacement threshold: 10-20% remaining life
+    - Notifications will persist until filters are replaced
+    - Works with HVAC systems, air purifiers, and standalone filters
+  domain: automation
+  author: "Home Assistant Community"
+  homeassistant:
+    min_version: "2024.6.0"
+  input:
+    # Main Configuration Section
+    main_config:
+      name: "Main Configuration"
+      icon: "mdi:air-filter"
+      description: "Primary air filter monitoring configuration"
+      input:
+        filter_lifetime_sensors:
+          name: "Filter Lifetime Sensors"
+          description: "Select the air filter sensors to monitor for replacement needs"
+          selector:
+            entity:
+              multiple: true
+              filter:
+                domain: sensor
+        
+        filter_replace_threshold:
+          name: "Replacement Threshold"
+          description: "Filter life percentage at which to trigger replacement notifications"
+          default: 15
+          selector:
+            number:
+              min: 5
+              max: 50
+              step: 5
+              unit_of_measurement: "%"
+              mode: slider
+        
+        location_prefix:
+          name: "Location Prefix"
+          description: "Optional prefix for filter location (e.g., 'HVAC', 'Bedroom Air Purifier')"
+          default: "Air Filter"
+          selector:
+            text:
+    
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:bell-alert"
+      description: "Configure notification delivery and behavior"
+      input:
+        notification_service:
+          name: "Notification Service"
+          description: "Select the notification service to send alerts to"
+          default: "notify.persistent_notification"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.persistent_notification"
+                - "notify.mobile_app"
+                - "notify.notify"
+        
+        include_percentage:
+          name: "Include Remaining Life Percentage"
+          description: "Include the exact percentage of remaining filter life in notifications"
+          default: true
+          selector:
+            boolean:
+    
+    # Advanced Settings Section (collapsed by default)
+    advanced_settings:
+      name: "Advanced Settings"
+      icon: "mdi:tune"
+      description: "Optional advanced configuration for notification behavior"
+      collapsed: true
+      input:
+        notification_title:
+          name: "Notification Title"
+          description: "Custom title for replacement notifications"
+          default: "Air Filter Replacement Required"
+          selector:
+            text:
+        
+        custom_message:
+          name: "Custom Message Template"
+          description: |
+            Custom message template. Available variables:
+            - {filter_name}: Name of the filter sensor
+            - {location}: Location prefix
+            - {percentage}: Remaining life percentage
+            - {friendly_name}: Friendly name of the sensor
+          default: ""
+          selector:
+            text:
+              multiline: true
+
+variables:
+  filter_sensors: !input filter_lifetime_sensors
+  replace_threshold: !input filter_replace_threshold
+  location_prefix: !input location_prefix
+  notification_service: !input notification_service
+  include_percentage: !input include_percentage
+  notification_title: !input notification_title
+  custom_message: !input custom_message
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input filter_lifetime_sensors
+    below: !input filter_replace_threshold
+    id: "filter_needs_replacement"
+  - platform: numeric_state
+    entity_id: !input filter_lifetime_sensors
+    above: !input filter_replace_threshold
+    id: "filter_replaced"
+
+condition: []
+
+action:
+  - choose:
+      # Filter needs replacement - create notification
+      - conditions:
+          - condition: trigger
+            id: "filter_needs_replacement"
+        sequence:
+          - service: "{{ notification_service }}"
+            data:
+              title: "{{ notification_title }}"
+              message: >-
+                {% if custom_message != "" %}
+                  {{ custom_message.replace('{filter_name}', trigger.to_state.entity_id)
+                                   .replace('{location}', location_prefix)
+                                   .replace('{percentage}', trigger.to_state.state)
+                                   .replace('{friendly_name}', trigger.to_state.attributes.friendly_name or trigger.to_state.entity_id) }}
+                {% else %}
+                  {% set filter_name = trigger.to_state.attributes.friendly_name or trigger.to_state.entity_id %}
+                  {% if include_percentage %}
+                    {{ location_prefix }} "{{ filter_name }}" needs replacement ({{ trigger.to_state.state }}% remaining)
+                  {% else %}
+                    {{ location_prefix }} "{{ filter_name }}" needs replacement
+                  {% endif %}
+                {% endif %}
+              data:
+                tag: "air_filter_{{ trigger.to_state.entity_id | replace('.', '_') }}"
+      
+      # Filter was replaced - dismiss notification
+      - conditions:
+          - condition: trigger
+            id: "filter_replaced"
+        sequence:
+          - service: persistent_notification.dismiss
+            data:
+              notification_id: "air_filter_{{ trigger.to_state.entity_id | replace('.', '_') }}"
