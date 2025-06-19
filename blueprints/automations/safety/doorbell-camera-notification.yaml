@@ -1,0 +1,210 @@
+blueprint:
+  name: Doorbell Camera Notification
+  description: |
+    Send notifications with optional camera snapshots when doorbell is pressed.
+    
+    **Features:**
+    - Configurable doorbell binary sensor trigger
+    - Optional camera integration with snapshot attachment
+    - Customizable notification message and title
+    - Flexible notification service selection
+    - Duplicate notification prevention with cooldown period
+    - Support for any binary sensor (doorbell, button, motion)
+    
+    **Requirements:**
+    - Binary sensor representing doorbell press
+    - Notification service configured in Home Assistant
+    - Optional: Camera entity for image attachments
+    
+    **Usage Notes:**
+    - Works with any binary sensor that triggers on doorbell press
+    - Camera snapshots are attached to notifications when camera is configured
+    - Cooldown period prevents spam from multiple rapid presses
+    - Compatible with mobile apps, persistent notifications, and third-party services
+    
+  domain: automation
+  author: "Home Assistant Community"
+  homeassistant:
+    min_version: "2024.6.0"
+  input:
+    # Main Configuration Section
+    main_config:
+      name: "Main Configuration"
+      icon: "mdi:doorbell"
+      description: "Primary doorbell and camera configuration"
+      input:
+        doorbell_sensor:
+          name: Doorbell Sensor
+          description: Binary sensor that triggers when doorbell is pressed
+          selector:
+            entity:
+              filter:
+                domain: binary_sensor
+        
+        camera_entity:
+          name: Camera (Optional)
+          description: Camera to capture snapshot for notification attachment
+          default: ""
+          selector:
+            entity:
+              filter:
+                domain: camera
+        
+        location_name:
+          name: Location Name
+          description: Descriptive name for the doorbell location (e.g., "Front Door", "Main Entrance")
+          default: "Doorbell"
+          selector:
+            text:
+    
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:bell-alert"
+      description: "Configure notification delivery and content"
+      input:
+        notification_service:
+          name: Notification Service
+          description: The notification service to use for alerts
+          default: "notify.persistent_notification"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.persistent_notification"
+                - "notify.mobile_app_iphone"
+                - "notify.mobile_app_android"
+                - "notify.pushbullet"
+                - "notify.telegram"
+        
+        notification_title:
+          name: Notification Title
+          description: Title for the notification
+          default: "🔔 Doorbell Pressed"
+          selector:
+            text:
+        
+        notification_message:
+          name: Notification Message
+          description: Message content for the notification
+          default: "Someone is at the {{ location_name }}!"
+          selector:
+            text:
+              multiline: true
+    
+    # Advanced Settings Section
+    advanced_settings:
+      name: "Advanced Settings"
+      icon: "mdi:tune"
+      description: "Optional advanced notification configuration"
+      collapsed: true
+      input:
+        cooldown_period:
+          name: Cooldown Period
+          description: Minimum time between notifications to prevent spam
+          default:
+            seconds: 30
+          selector:
+            duration:
+        
+        include_timestamp:
+          name: Include Timestamp
+          description: Add timestamp to notification message
+          default: true
+          selector:
+            boolean:
+        
+        camera_timeout:
+          name: Camera Snapshot Timeout
+          description: Maximum time to wait for camera snapshot
+          default: 10
+          selector:
+            number:
+              min: 5
+              max: 30
+              step: 1
+              unit_of_measurement: "seconds"
+
+variables:
+  doorbell_entity: !input doorbell_sensor
+  camera_entity: !input camera_entity
+  location: !input location_name
+  notification_title_template: !input notification_title
+  notification_message_template: !input notification_message
+  has_camera: "{{ camera_entity != '' and camera_entity != 'unavailable' }}"
+  timestamp_enabled: !input include_timestamp
+  current_time: "{{ now().strftime('%I:%M %p on %B %d, %Y') }}"
+
+trigger:
+  - platform: state
+    entity_id: !input doorbell_sensor
+    to: "on"
+
+condition:
+  # Prevent duplicate notifications during cooldown period
+  - condition: template
+    value_template: >
+      {% set last_triggered = state_attr(this.entity_id, 'last_triggered') %}
+      {% if last_triggered is none %}
+        true
+      {% else %}
+        {{ (now() - last_triggered).total_seconds() > states('input_select.cooldown_seconds') | int(30) }}
+      {% endif %}
+
+action:
+  - choose:
+      # Camera enabled - capture snapshot and send with notification
+      - conditions:
+          - condition: template
+            value_template: "{{ has_camera }}"
+        sequence:
+          - service: camera.snapshot
+            target:
+              entity_id: !input camera_entity
+            data:
+              filename: "/tmp/doorbell_snapshot_{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg"
+            timeout: !input camera_timeout
+            continue_on_error: true
+          
+          - service: !input notification_service
+            data:
+              title: "{{ notification_title_template }}"
+              message: >
+                {{ notification_message_template }}
+                {% if timestamp_enabled %}
+                
+                Time: {{ current_time }}
+                {% endif %}
+              data:
+                image: "/tmp/doorbell_snapshot_{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg"
+                priority: high
+                ttl: 0
+                actions:
+                  - action: "view_camera"
+                    title: "View Camera"
+                  - action: "dismiss"
+                    title: "Dismiss"
+    
+    # No camera - send text notification only
+    default:
+      - service: !input notification_service
+        data:
+          title: "{{ notification_title_template }}"
+          message: >
+            {{ notification_message_template }}
+            {% if timestamp_enabled %}
+            
+            Time: {{ current_time }}
+            {% endif %}
+          data:
+            priority: high
+            ttl: 0
+            actions:
+              - action: "acknowledge"
+                title: "Acknowledge"
+              - action: "dismiss"
+                title: "Dismiss"
+
+# Use single mode with cooldown to prevent multiple simultaneous triggers
+mode: single
+max_exceeded: silent
