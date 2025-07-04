@@ -41,10 +41,17 @@ blueprint:
                 device_class: 
                   - door
                   - window
-        
+
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:message-alert"
+      description: "Configure notification delivery and content"
+      input:
         notification_service:
           name: "Notification Service"
           description: "Select the notification service to send alerts to"
+          default: "notify.notify"
           selector:
             select:
               custom_value: true
@@ -52,12 +59,45 @@ blueprint:
                 - "notify.notify"
                 - "notify.mobile_app"
                 - "notify.persistent_notification"
+        
+        notification_title:
+          name: "Notification Title"
+          description: "Title for the notifications"
+          default: "🚪 Door/Window Alert"
+          selector:
+            text:
+        
+        send_resolution_notification:
+          name: "Send Resolution Notification"
+          description: "Send a notification when the door/window is finally closed"
+          default: true
+          selector:
+            boolean:
+
+    # Threshold Configuration Section
+    threshold_config:
+      name: "Threshold Configuration"
+      icon: "mdi:tune"
+      description: "Customize timing and alert thresholds"
+      collapsed: true
+      input:
+        grace_period:
+          name: "Grace Period"
+          description: "Additional time to allow before starting alerts"
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 30
+              unit_of_measurement: "minutes"
+              mode: slider
     
-    # Timing Configuration Section
-    timing_config:
-      name: "Timing Configuration"
-      icon: "mdi:timer"
+    # Advanced Settings Section
+    advanced_settings:
+      name: "Advanced Settings"
+      icon: "mdi:cog"
       description: "Configure delays and reminder intervals"
+      collapsed: true
       input:
         initial_delay:
           name: "Initial Delay"
@@ -90,27 +130,7 @@ blueprint:
               min: 0
               max: 20
               mode: box
-    
-    # Notification Settings Section
-    notification_settings:
-      name: "Notification Settings"
-      icon: "mdi:message-alert"
-      description: "Customize notification messages and behavior"
-      input:
-        send_resolution_notification:
-          name: "Send Resolution Notification"
-          description: "Send a notification when the door/window is finally closed"
-          default: true
-          selector:
-            boolean:
-    
-    # Advanced Settings Section (collapsed by default)
-    advanced_settings:
-      name: "Advanced Settings"
-      icon: "mdi:tune"
-      description: "Optional message customization"
-      collapsed: true
-      input:
+
         initial_message:
           name: "Initial Notification Message"
           description: "Custom message for the first notification. Use {door_name} for sensor name and {time} for delay time."

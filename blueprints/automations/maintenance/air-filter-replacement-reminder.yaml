@@ -44,18 +44,6 @@ blueprint:
               filter:
                 domain: sensor
         
-        filter_replace_threshold:
-          name: "Replacement Threshold"
-          description: "Filter life percentage at which to trigger replacement notifications"
-          default: 15
-          selector:
-            number:
-              min: 5
-              max: 50
-              step: 5
-              unit_of_measurement: "%"
-              mode: slider
-        
         location_prefix:
           name: "Location Prefix"
           description: "Optional prefix for filter location (e.g., 'HVAC', 'Bedroom Air Purifier')"
@@ -87,6 +75,25 @@ blueprint:
           default: true
           selector:
             boolean:
+
+    # Threshold Configuration Section
+    threshold_config:
+      name: "Threshold Configuration"
+      icon: "mdi:tune"
+      description: "Customize replacement alert thresholds"
+      collapsed: true
+      input:
+        filter_replace_threshold:
+          name: "Replacement Threshold"
+          description: "Filter life percentage at which to trigger replacement notifications"
+          default: 15
+          selector:
+            number:
+              min: 5
+              max: 50
+              step: 5
+              unit_of_measurement: "%"
+              mode: slider
     
     # Advanced Settings Section (collapsed by default)
     advanced_settings:

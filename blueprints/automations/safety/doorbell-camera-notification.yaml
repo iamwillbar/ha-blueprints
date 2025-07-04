@@ -1,5 +1,5 @@
 blueprint:
-  name: Doorbell Camera Notification
+  name: "Doorbell Camera Notification"
   description: |
     Send notifications with optional camera snapshots when doorbell is pressed.
     

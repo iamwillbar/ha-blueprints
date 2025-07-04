@@ -1,5 +1,5 @@
 blueprint:
-  name: Apollo AIR-1 Air Quality Monitor
+  name: "Apollo AIR-1 Air Quality Monitor"
   description: |
     Comprehensive air quality monitoring and alerting for Apollo AIR-1 sensor with intelligent threat detection.
     
