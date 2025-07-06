@@ -10,15 +10,6 @@ blueprint:
     - Optional resolution notifications when closed
     - Parallel execution for multiple openings
     - Configurable maximum reminder count
-    
-    **Requirements:**
-    - Door/window binary sensors with appropriate device classes
-    - Home Assistant notification service configured
-    
-    **Usage Notes:**
-    - Use placeholders {door_name} and {time} in custom messages
-    - Set max reminders to 0 for unlimited reminders
-    - Resolution notifications help confirm doors/windows were closed
   domain: automation
   author: "William Bartholomew"
   homeassistant:
@@ -60,16 +51,23 @@ blueprint:
                 - "notify.mobile_app"
                 - "notify.persistent_notification"
         
-        initial_delay:
-          name: "Initial Delay"
+        initial_notification_delay:
+          name: "Initial Notification Delay"
           description: "Time to wait before sending the first notification"
           default: 5
           selector:
             number:
-              min: 1
+              min: 0
               max: 60
               unit_of_measurement: "minutes"
               mode: slider
+        
+        send_reminders:
+          name: "Send Reminder Notifications"
+          description: "Send periodic reminder notifications if door/window is still open"
+          default: true
+          selector:
+            boolean:
         
         reminder_interval:
           name: "Reminder Interval"
@@ -82,8 +80,8 @@ blueprint:
               unit_of_measurement: "minutes"
               mode: slider
         
-        max_reminders:
-          name: "Maximum Reminders"
+        max_reminder_count:
+          name: "Maximum Reminder Count"
           description: "Maximum number of reminder notifications (0 = unlimited)"
           default: 3
           selector:
@@ -113,25 +111,48 @@ blueprint:
           selector:
             text:
         
-        initial_message:
+        notification_message:
           name: "Initial Notification Message"
-          description: "Custom message for the first notification. Use {door_name} for sensor name and {time} for delay time."
+          description: |
+            Custom message template for the first notification. Available variables:
+            - `{door_name}`: Name of the door/window sensor
+            - `{time}`: Time the door/window has been open
           default: "🚪 {door_name} has been open for {time} minutes"
           selector:
             text:
               multiline: true
         
+        reminder_title:
+          name: "Reminder Title"
+          description: "Title for reminder notifications"
+          default: "🔄 Door/Window Still Open"
+          selector:
+            text:
+        
         reminder_message:
-          name: "Reminder Notification Message"
-          description: "Custom message for reminder notifications. Use {door_name} for sensor name and {time} for total time open."
+          name: "Reminder Message"
+          description: |
+            Custom message template for reminder notifications. Available variables:
+            - `{door_name}`: Name of the door/window sensor
+            - `{time}`: Total time the door/window has been open
           default: "⚠️ {door_name} is still open after {time} minutes"
           selector:
             text:
               multiline: true
         
+        resolution_title:
+          name: "Resolution Title"
+          description: "Title for resolution notifications"
+          default: "✅ Door/Window Closed"
+          selector:
+            text:
+        
         resolution_message:
-          name: "Resolution Notification Message"
-          description: "Custom message when door/window is closed. Use {door_name} for sensor name and {time} for total open time."
+          name: "Resolution Message"
+          description: |
+            Custom message template when door/window is closed. Available variables:
+            - `{door_name}`: Name of the door/window sensor
+            - `{time}`: Total time the door/window was open
           default: "✅ {door_name} has been closed (was open for {time} minutes)"
           selector:
             text:
@@ -147,13 +168,16 @@ trigger:
 
 variables:
   door_sensors: !input door_sensors
-  initial_delay: !input initial_delay
+  initial_notification_delay: !input initial_notification_delay
+  send_reminders: !input send_reminders
   reminder_interval: !input reminder_interval
-  max_reminders: !input max_reminders
+  max_reminder_count: !input max_reminder_count
   notification_service: !input notification_service
   notification_title: !input notification_title
-  initial_message: !input initial_message
+  notification_message: !input notification_message
+  reminder_title: !input reminder_title
   reminder_message: !input reminder_message
+  resolution_title: !input resolution_title
   resolution_message: !input resolution_message
   send_resolution_notification: !input send_resolution_notification
   triggered_door: "{{ trigger.entity_id }}"
@@ -163,7 +187,7 @@ action:
   # Wait for the configured initial delay before first notification
   - alias: "Wait for initial delay"
     delay:
-      minutes: "{{ initial_delay }}"
+      minutes: "{{ initial_notification_delay }}"
   
   # Verify the door/window is still open before proceeding
   - alias: "Check if door is still open"
@@ -175,41 +199,45 @@ action:
   - alias: "Send initial notification"
     service: "{{ notification_service }}"
     data:
-      message: >
-        {{ initial_message.replace('{door_name}', door_name).replace('{time}', initial_delay | string) }}
       title: "{{ notification_title }}"
+      message: >
+        {{ notification_message.replace('{door_name}', door_name).replace('{time}', initial_notification_delay | string) }}
   
-  # Send periodic reminder notifications
+  # Send periodic reminder notifications if enabled
   - alias: "Send reminder notifications"
-    repeat:
-      while:
-        # Continue while door is open and under max reminder limit
-        - condition: template
-          value_template: "{{ is_state(triggered_door, 'on') }}"
-        - condition: template
-          value_template: "{{ max_reminders == 0 or repeat.index <= max_reminders }}"
-      sequence:
-        - alias: "Wait for reminder interval"
-          delay:
-            minutes: "{{ reminder_interval }}"
-        
-        # Double-check door is still open before sending reminder
-        - alias: "Check if door is still open before sending reminder"
-          condition:
+    if:
+      - condition: template
+        value_template: "{{ send_reminders }}"
+    then:
+      - repeat:
+          while:
+            # Continue while door is open and under max reminder limit
             - condition: template
               value_template: "{{ is_state(triggered_door, 'on') }}"
-        
-        # Calculate total time the door has been open
-        - alias: "Calculate total time open"
-          variables:
-            total_time_open: "{{ initial_delay + (repeat.index * reminder_interval) }}"
-        
-        - alias: "Send reminder notification"
-          service: "{{ notification_service }}"
-          data:
-            message: >
-              {{ reminder_message.replace('{door_name}', door_name).replace('{time}', total_time_open | string) }}
-            title: "{{ notification_title }}"
+            - condition: template
+              value_template: "{{ max_reminder_count == 0 or repeat.index <= max_reminder_count }}"
+          sequence:
+            - alias: "Wait for reminder interval"
+              delay:
+                minutes: "{{ reminder_interval }}"
+            
+            # Double-check door is still open before sending reminder
+            - alias: "Check if door is still open before sending reminder"
+              condition:
+                - condition: template
+                  value_template: "{{ is_state(triggered_door, 'on') }}"
+            
+            # Calculate total time the door has been open
+            - alias: "Calculate total time open"
+              variables:
+                total_time_open: "{{ initial_notification_delay + (repeat.index * reminder_interval) }}"
+            
+            - alias: "Send reminder notification"
+              service: "{{ notification_service }}"
+              data:
+                title: "{{ reminder_title }}"
+                message: >
+                  {{ reminder_message.replace('{door_name}', door_name).replace('{time}', total_time_open | string) }}
   
   # Optional: Wait for door to close and send resolution notification
   - alias: "Wait for door to close and send resolution notification"
@@ -239,6 +267,6 @@ action:
           - alias: "Send door closed notification"
             service: "{{ notification_service }}"
             data:
+              title: "{{ resolution_title }}"
               message: >
                 {{ resolution_message.replace('{door_name}', door_name).replace('{time}', total_minutes | string) }}
-              title: "{{ notification_title }}"

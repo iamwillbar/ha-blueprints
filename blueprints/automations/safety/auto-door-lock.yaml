@@ -8,24 +8,7 @@ blueprint:
     - Works with any door sensor and smart lock combination
     - Optional notifications when door is locked
     - Safety check to ensure door is actually closed before locking
-    - Parallel execution for multiple doors
     - Optional grace period to prevent immediate locking
-    
-    **Requirements:**
-    - Door binary sensor with door device class
-    - Compatible smart lock entity
-    - Home Assistant notification service (optional)
-    
-    **Usage Notes:**
-    - Door must be fully closed before the timer starts
-    - Grace period allows time for manual locking before automation
-    - Lock commands are only sent if the door is confirmed closed
-    - Use multiple instances for different doors with different delays
-    
-    **Safety Features:**
-    - Double-checks door state before locking
-    - Will not lock if door sensor shows open
-    - Optional notifications confirm successful locking
   domain: automation
   author: "William Bartholomew"
   homeassistant:
@@ -112,22 +95,63 @@ blueprint:
       input:
         notification_title:
           name: "Notification Title"
-          description: "Title for the lock notifications"
-          default: "🔒 Auto Lock"
+          description: "Title for lock confirmation notifications"
+          default: "🔒 Door Automatically Locked"
           selector:
             text:
         
-        custom_lock_message:
-          name: "Lock Message"
-          description: "Custom message for lock notifications. Use {door_name} for door name and {delay} for lock delay."
-          default: "🔒 {door_name} has been automatically locked after being closed for {delay} minutes"
+        notification_message:
+          name: "Notification Message"
+          description: |
+            Message template for lock confirmations. Available variables:
+            - `{door_name}`: Name of the door
+            - `{lock_delay}`: Configured lock delay time
+          default: "🔒 {door_name} has been automatically locked after being closed for {lock_delay} minutes."
+          selector:
+            text:
+              multiline: true
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+
+    # Notification Content Section
+    notification_content_config:
+      name: "Customize Notification Content (Optional)"
+      icon: "mdi:message-text"
+      description: "Customize notification titles and messages"
+      collapsed: true
+      input:
+        notification_title:
+          name: "Notification Title"
+          description: "Title for lock confirmation notifications"
+          default: "🔒 Door Automatically Locked"
+          selector:
+            text:
+        
+        notification_message:
+          name: "Notification Message"
+          description: |
+            Message template for lock confirmations. Available variables:
+            - `{door_name}`: Name of the door
+            - `{lock_delay}`: Configured lock delay time
+          default: "🔒 {door_name} has been automatically locked after being closed for {lock_delay} minutes."
           selector:
             text:
               multiline: true
         
-        lock_failure_message:
+        failure_title:
+          name: "Lock Failure Title"
+          description: "Title for lock failure notifications"
+          default: "⚠️ Auto Lock Failed"
+          selector:
+            text:
+        
+        failure_message:
           name: "Lock Failure Message"
-          description: "Custom message when door fails to lock. Use {door_name} for door name and {attempts} for number of attempts."
+          description: |
+            Message template for lock failure notifications. Available variables:
+            - `{door_name}`: Name of the door
+            - `{attempts}`: Number of lock attempts made
           default: "⚠️ Failed to automatically lock {door_name} after {attempts} attempts. Please check the lock status manually."
           selector:
             text:
@@ -198,11 +222,12 @@ variables:
   send_notifications: !input send_notifications
   notification_service: !input notification_service
   notification_title: !input notification_title
+  notification_message: !input notification_message
+  failure_title: !input failure_title
+  failure_message: !input failure_message
   check_lock_state: !input check_lock_state
   max_lock_attempts: !input max_lock_attempts
   lock_retry_delay: !input lock_retry_delay
-  custom_lock_message: !input custom_lock_message
-  lock_failure_message: !input lock_failure_message
 
 condition:
   # Ensure door is still closed
@@ -283,7 +308,8 @@ action:
                   data:
                     title: "{{ notification_title }}"
                     message: >
-                      {{ custom_lock_message.replace('{door_name}', door_name).replace('{delay}', lock_delay | string) }}
+                      {{ notification_message.replace('{door_name}', door_name)
+                                            .replace('{lock_delay}', lock_delay | string) }}
             - stop: "Lock successful"
           else:
             # Lock failed, wait before retry (unless this is the last attempt)
@@ -303,6 +329,7 @@ action:
     then:
       - service: "{{ notification_service }}"
         data:
-          title: "⚠️ Auto Lock Failed"
+          title: "{{ failure_title }}"
           message: >
-            {{ lock_failure_message.replace('{door_name}', door_name).replace('{attempts}', max_lock_attempts | string) }}
+            {{ failure_message.replace('{door_name}', door_name)
+                             .replace('{attempts}', max_lock_attempts | string) }}

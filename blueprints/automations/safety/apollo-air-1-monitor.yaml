@@ -304,7 +304,7 @@ blueprint:
       description: "Configure notification delivery and timing"
       input:
         notification_service:
-          name: "Standard Notification Service"
+          name: "Notification Service"
           description: "Notification service for standard air quality alerts"
           default: "notify.notify"
           selector:
@@ -315,6 +315,60 @@ blueprint:
                 - "notify.mobile_app"
                 - "notify.persistent_notification"
         
+        initial_notification_delay:
+          name: "Initial Notification Delay"
+          description: "Time to wait before sending the first notification"
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 60
+              step: 5
+              unit_of_measurement: "minutes"
+              mode: slider
+        
+        send_reminders:
+          name: "Send Reminder Notifications"
+          description: "Send periodic reminder notifications for standard air quality alerts"
+          default: true
+          selector:
+            boolean:
+        
+        reminder_interval:
+          name: "Reminder Interval"
+          description: "Time between reminder notifications for standard alerts"
+          default: 60
+          selector:
+            number:
+              min: 15
+              max: 480
+              step: 15
+              unit_of_measurement: "minutes"
+              mode: slider
+        
+        max_reminder_count:
+          name: "Maximum Reminder Count"
+          description: "Maximum number of reminder notifications for standard alerts (0 = unlimited)"
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 50
+              mode: box
+        
+        send_resolution_notification:
+          name: "Send Resolution Notification"
+          description: "Send notifications when air quality returns to normal"
+          default: true
+          selector:
+            boolean:
+
+    # Critical Alert Settings Section
+    critical_notification_config:
+      name: "Critical Alert Settings"
+      icon: "mdi:bell-alert-outline"
+      description: "Configure critical CO alert delivery and timing"
+      input:
         critical_notification_service:
           name: "Critical Notification Service (Optional)"
           description: "Separate notification service for critical CO alerts. Leave empty to use standard service."
@@ -327,21 +381,9 @@ blueprint:
                 - "notify.mobile_app"
                 - "notify.persistent_notification"
         
-        standard_reminder_interval:
-          name: "Standard Alert Reminder Interval"
-          description: "How often to repeat standard air quality alerts (0 = no reminders)"
-          default: 60
-          selector:
-            number:
-              min: 0
-              max: 480
-              step: 15
-              unit_of_measurement: "minutes"
-              mode: slider
-        
         critical_reminder_interval:
           name: "Critical Alert Reminder Interval"
-          description: "How often to repeat critical CO alerts"
+          description: "Time between critical CO alert reminders"
           default: 5
           selector:
             number:
@@ -351,12 +393,15 @@ blueprint:
               unit_of_measurement: "minutes"
               mode: slider
         
-        send_resolution_notifications:
-          name: "Send Resolution Notifications"
-          description: "Send notifications when air quality returns to normal (not for critical CO alerts)"
-          default: true
+        critical_max_reminder_count:
+          name: "Critical Maximum Reminder Count"
+          description: "Maximum number of critical reminders (0 = unlimited, recommended for safety)"
+          default: 0
           selector:
-            boolean:
+            number:
+              min: 0
+              max: 50
+              mode: box
 
     # Notification Content Section
     notification_content_config:
@@ -365,78 +410,93 @@ blueprint:
       description: "Customize notification titles and messages"
       collapsed: true
       input:
-        # Standard alert titles and messages
-        co2_alert_title:
-          name: "CO2 Alert Title"
-          description: "Title for CO2 alerts. Use {device_area} for location."
-          default: "💨 Poor Ventilation Alert"
+        # Standard air quality notifications (initial)
+        notification_title:
+          name: "Standard Alert Title"
+          description: "General title for standard air quality alerts"
+          default: "🏠 Air Quality Alert"
           selector:
             text:
         
         co2_alert_message:
           name: "CO2 Alert Message"
-          description: "Message for CO2 alerts. Use {device_area} for location, {co2_level} for current level, {co2_limit} for threshold."
-          default: "CO2 levels are high in {device_area} ({co2_level} ppm, threshold: {co2_limit} ppm). Consider improving ventilation."
+          description: |
+            Message template for CO2 alerts. Available variables:
+            - `{device_area}`: Location/area name
+            - `{co2_level}`: Current CO2 level
+            - `{co2_limit}`: Configured threshold
+          default: "💨 CO2 levels are high in {device_area} ({co2_level} ppm, threshold: {co2_limit} ppm). Consider improving ventilation."
           selector:
             text:
               multiline: true
-        
-        pm25_alert_title:
-          name: "PM2.5 Alert Title"
-          description: "Title for PM2.5 alerts. Use {device_area} for location."
-          default: "🌫️ Air Quality Alert"
-          selector:
-            text:
         
         pm25_alert_message:
           name: "PM2.5 Alert Message"
-          description: "Message for PM2.5 alerts. Use {device_area} for location, {pm25_level} for current level, {pm25_limit} for threshold."
-          default: "PM2.5 levels are unhealthy in {device_area} ({pm25_level} µg/m³, threshold: {pm25_limit} µg/m³). Air quality is poor."
+          description: |
+            Message template for PM2.5 alerts. Available variables:
+            - `{device_area}`: Location/area name
+            - `{pm25_level}`: Current PM2.5 level
+            - `{pm25_limit}`: Configured threshold
+          default: "🌫️ PM2.5 levels are unhealthy in {device_area} ({pm25_level} µg/m³, threshold: {pm25_limit} µg/m³). Air quality is poor."
           selector:
             text:
               multiline: true
-        
-        voc_alert_title:
-          name: "VOC Alert Title"
-          description: "Title for VOC alerts. Use {device_area} for location."
-          default: "🫧 VOC Alert"
-          selector:
-            text:
         
         voc_alert_message:
           name: "VOC Alert Message"
-          description: "Message for VOC alerts. Use {device_area} for location, {voc_level} for current level, {voc_limit} for threshold."
-          default: "VOC levels are elevated in {device_area} (index: {voc_level}, threshold: {voc_limit}). Poor air quality detected."
+          description: |
+            Message template for VOC alerts. Available variables:
+            - `{device_area}`: Location/area name
+            - `{voc_level}`: Current VOC index
+            - `{voc_limit}`: Configured threshold
+          default: "🫧 VOC levels are elevated in {device_area} (index: {voc_level}, threshold: {voc_limit}). Poor air quality detected."
           selector:
             text:
               multiline: true
         
-        # Critical CO alert titles and messages
-        co_warning_title:
-          name: "CO Warning Title"
-          description: "Title for CO warning alerts. Use {device_area} for location."
-          default: "⚠️ Carbon Monoxide Warning"
+        # Reminder notifications
+        reminder_title:
+          name: "Reminder Title"
+          description: "Title for reminder notifications"
+          default: "🔄 Air Quality Still Poor"
+          selector:
+            text:
+        
+        # Resolution notifications  
+        resolution_title:
+          name: "Resolution Title"
+          description: "Title for resolution notifications"
+          default: "✅ Air Quality Normal"
+          selector:
+            text:
+        
+        # Critical CO notifications
+        critical_title:
+          name: "Critical CO Alert Title"
+          description: "Title for critical carbon monoxide alerts"
+          default: "🚨 CRITICAL: Carbon Monoxide"
           selector:
             text:
         
         co_warning_message:
           name: "CO Warning Message"
-          description: "Message for CO warning alerts. Use {device_area} for location, {co_level} for current level, {co_warning_limit} for threshold."
+          description: |
+            Message template for CO warning alerts. Available variables:
+            - `{device_area}`: Location/area name
+            - `{co_level}`: Current CO level
+            - `{co_warning_limit}`: Warning threshold
           default: "⚠️ Carbon monoxide detected in {device_area} ({co_level} ppm, warning threshold: {co_warning_limit} ppm). Monitor levels closely."
           selector:
             text:
               multiline: true
         
-        co_critical_title:
-          name: "CO Critical Title"
-          description: "Title for critical CO alerts. Use {device_area} for location."
-          default: "🚨 CRITICAL: Carbon Monoxide"
-          selector:
-            text:
-        
         co_critical_message:
           name: "CO Critical Message"
-          description: "Message for critical CO alerts. Use {device_area} for location, {co_level} for current level, {co_critical_limit} for threshold."
+          description: |
+            Message template for critical CO alerts. Available variables:
+            - `{device_area}`: Location/area name
+            - `{co_level}`: Current CO level
+            - `{co_critical_limit}`: Critical threshold
           default: "🚨 CRITICAL: Dangerous carbon monoxide levels in {device_area} ({co_level} ppm, critical threshold: {co_critical_limit} ppm). Evacuate immediately and ventilate!"
           selector:
             text:
@@ -470,19 +530,22 @@ variables:
   methane_limit: !input methane_threshold
   hydrogen_limit: !input hydrogen_threshold
   nitrogen_dioxide_limit: !input nitrogen_dioxide_threshold
-  standard_reminder_interval: !input standard_reminder_interval
+  initial_notification_delay: !input initial_notification_delay
+  send_reminders: !input send_reminders
+  reminder_interval: !input reminder_interval
+  max_reminder_count: !input max_reminder_count
+  send_resolution_notification: !input send_resolution_notification
   critical_reminder_interval: !input critical_reminder_interval
-  send_resolution_notifications: !input send_resolution_notifications
+  critical_max_reminder_count: !input critical_max_reminder_count
   # Message templates
-  co2_alert_title_template: !input co2_alert_title
+  notification_title: !input notification_title
   co2_alert_message_template: !input co2_alert_message
-  pm25_alert_title_template: !input pm25_alert_title
   pm25_alert_message_template: !input pm25_alert_message
-  voc_alert_title_template: !input voc_alert_title
   voc_alert_message_template: !input voc_alert_message
-  co_warning_title_template: !input co_warning_title
+  reminder_title: !input reminder_title
+  resolution_title: !input resolution_title
+  critical_title: !input critical_title
   co_warning_message_template: !input co_warning_message
-  co_critical_title_template: !input co_critical_title
   co_critical_message_template: !input co_critical_message
 
 mode: parallel
@@ -588,10 +651,11 @@ action:
         sequence:
           - service: "{{ effective_critical_service }}"
             data:
-              title: >
-                {{ co_critical_title_template.replace('{device_area}', device_area) }}
+              title: "{{ critical_title }}"
               message: >
-                {{ co_critical_message_template.replace('{device_area}', device_area).replace('{co_level}', states(co_entity)).replace('{co_critical_limit}', co_critical_limit | string) }}
+                {{ co_critical_message_template.replace('{device_area}', device_area)
+                                              .replace('{co_level}', states(co_entity))
+                                              .replace('{co_critical_limit}', co_critical_limit | string) }}
                 
       - conditions:
           - condition: trigger
@@ -599,10 +663,11 @@ action:
         sequence:
           - service: "{{ effective_critical_service }}"
             data:
-              title: >
-                {{ co_warning_title_template.replace('{device_area}', device_area) }}
+              title: "{{ critical_title }}"
               message: >
-                {{ co_warning_message_template.replace('{device_area}', device_area).replace('{co_level}', states(co_entity)).replace('{co_warning_limit}', co_warning_limit | string) }}
+                {{ co_warning_message_template.replace('{device_area}', device_area)
+                                             .replace('{co_level}', states(co_entity))
+                                             .replace('{co_warning_limit}', co_warning_limit | string) }}
                 
       - conditions:
           - condition: trigger
@@ -610,8 +675,10 @@ action:
         sequence:
           - service: "{{ effective_critical_service }}"
             data:
-              title: "✅ Carbon Monoxide Safe"
-              message: "Carbon monoxide levels have returned to safe levels in {{ device_area }} ({{ states(co_entity) }} ppm). All clear."
+              title: "{{ critical_resolution_title }}"
+              message: >
+                {{ co_normal_message_template.replace('{device_area}', device_area)
+                                            .replace('{co_level}', states(co_entity)) }}
                 
       # === REPEATED CO CRITICAL ALERTS ===
       - conditions:
@@ -622,10 +689,11 @@ action:
         sequence:
           - service: "{{ effective_critical_service }}"
             data:
-              title: >
-                {{ co_critical_title_template.replace('{device_area}', device_area) }}
+              title: "{{ reminder_title }}"
               message: >
-                {{ co_critical_message_template.replace('{device_area}', device_area).replace('{co_level}', states(co_entity)).replace('{co_critical_limit}', co_critical_limit | string) }}
+                {{ co_critical_message_template.replace('{device_area}', device_area)
+                                              .replace('{co_level}', states(co_entity))
+                                              .replace('{co_critical_limit}', co_critical_limit | string) }}
 
       # === STANDARD AIR QUALITY ALERTS ===  
       - conditions:
@@ -634,21 +702,24 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: >
-                {{ co2_alert_title_template.replace('{device_area}', device_area) }}
+              title: "{{ notification_title }}"
               message: >
-                {{ co2_alert_message_template.replace('{device_area}', device_area).replace('{co2_level}', states(co2_entity)).replace('{co2_limit}', co2_limit | string) }}
+                {{ co2_alert_message_template.replace('{device_area}', device_area)
+                                           .replace('{co2_level}', states(co2_entity))
+                                           .replace('{co2_limit}', co2_limit | string) }}
                 
       - conditions:
           - condition: trigger
             id: co2_normal
           - condition: template
-            value_template: "{{ send_resolution_notifications }}"
+            value_template: "{{ send_resolution_notification }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "✅ Ventilation Normal"
-              message: "CO2 levels have returned to normal in {{ device_area }} ({{ states(co2_entity) }} ppm)."
+              title: "{{ resolution_title }}"
+              message: >
+                {{ co2_normal_message_template.replace('{device_area}', device_area)
+                                             .replace('{co2_level}', states(co2_entity)) }}
                 
       - conditions:
           - condition: trigger
@@ -656,21 +727,24 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: >
-                {{ pm25_alert_title_template.replace('{device_area}', device_area) }}
+              title: "{{ notification_title }}"
               message: >
-                {{ pm25_alert_message_template.replace('{device_area}', device_area).replace('{pm25_level}', states(pm25_entity)).replace('{pm25_limit}', pm25_limit | string) }}
+                {{ pm25_alert_message_template.replace('{device_area}', device_area)
+                                             .replace('{pm25_level}', states(pm25_entity))
+                                             .replace('{pm25_limit}', pm25_limit | string) }}
                 
       - conditions:
           - condition: trigger
             id: pm25_normal
           - condition: template
-            value_template: "{{ send_resolution_notifications }}"
+            value_template: "{{ send_resolution_notification }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "✅ Air Quality Normal"
-              message: "PM2.5 levels have returned to normal in {{ device_area }} ({{ states(pm25_entity) }} µg/m³)."
+              title: "{{ resolution_title }}"
+              message: >
+                {{ pm25_normal_message_template.replace('{device_area}', device_area)
+                                              .replace('{pm25_level}', states(pm25_entity)) }}
                 
       - conditions:
           - condition: trigger
@@ -678,21 +752,24 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: >
-                {{ voc_alert_title_template.replace('{device_area}', device_area) }}
+              title: "{{ notification_title }}"
               message: >
-                {{ voc_alert_message_template.replace('{device_area}', device_area).replace('{voc_level}', states(voc_entity)).replace('{voc_limit}', voc_limit | string) }}
+                {{ voc_alert_message_template.replace('{device_area}', device_area)
+                                           .replace('{voc_level}', states(voc_entity))
+                                           .replace('{voc_limit}', voc_limit | string) }}
                 
       - conditions:
           - condition: trigger
             id: voc_normal
           - condition: template
-            value_template: "{{ send_resolution_notifications }}"
+            value_template: "{{ send_resolution_notification }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "✅ VOC Normal"
-              message: "VOC levels have returned to normal in {{ device_area }} (index: {{ states(voc_entity) }})."
+              title: "{{ resolution_title }}"
+              message: >
+                {{ voc_normal_message_template.replace('{device_area}', device_area)
+                                             .replace('{voc_level}', states(voc_entity)) }}
       
       # === STANDARD ALERT REMINDERS ===
       - conditions:
@@ -717,7 +794,7 @@ action:
                 sequence:
                   - service: "{{ notification_service }}"
                     data:
-                      title: "🔄 {{ co2_alert_title_template.replace('{device_area}', device_area) }}"
+                      title: "{{ reminder_title }}"
                       message: >
                         {{ co2_alert_message_template.replace('{device_area}', device_area).replace('{co2_level}', states(co2_entity)).replace('{co2_limit}', co2_limit | string) }}
               
@@ -727,7 +804,7 @@ action:
                 sequence:
                   - service: "{{ notification_service }}"
                     data:
-                      title: "🔄 {{ pm25_alert_title_template.replace('{device_area}', device_area) }}"
+                      title: "{{ reminder_title }}"
                       message: >
                         {{ pm25_alert_message_template.replace('{device_area}', device_area).replace('{pm25_level}', states(pm25_entity)).replace('{pm25_limit}', pm25_limit | string) }}
               
@@ -737,7 +814,7 @@ action:
                 sequence:
                   - service: "{{ notification_service }}"
                     data:
-                      title: "🔄 {{ voc_alert_title_template.replace('{device_area}', device_area) }}"
+                      title: "{{ reminder_title }}"
                       message: >
                         {{ voc_alert_message_template.replace('{device_area}', device_area).replace('{voc_level}', states(voc_entity)).replace('{voc_limit}', voc_limit | string) }}
                 

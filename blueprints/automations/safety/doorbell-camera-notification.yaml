@@ -4,24 +4,11 @@ blueprint:
     Send notifications with optional camera snapshots when doorbell is pressed.
     
     **Features:**
-    - Configurable doorbell binary sensor trigger
+    - Configurable doorbell binary sensor trigger (doorbell, button, motion)
     - Optional camera integration with snapshot attachment
-    - Customizable notification message and title
     - Flexible notification service selection
+    - Customizable notification message and title
     - Duplicate notification prevention with cooldown period
-    - Support for any binary sensor (doorbell, button, motion)
-    
-    **Requirements:**
-    - Binary sensor representing doorbell press
-    - Notification service configured in Home Assistant
-    - Optional: Camera entity for image attachments
-    
-    **Usage Notes:**
-    - Works with any binary sensor that triggers on doorbell press
-    - Camera snapshots are attached to notifications when camera is configured
-    - Cooldown period prevents spam from multiple rapid presses
-    - Compatible with mobile apps, persistent notifications, and third-party services
-    
   domain: automation
   author: "William Bartholomew"
   homeassistant:
@@ -84,15 +71,17 @@ blueprint:
       input:
         notification_title:
           name: "Notification Title"
-          description: "Title for the notification"
+          description: "Title for doorbell notifications"
           default: "🔔 Doorbell Pressed"
           selector:
             text:
         
         notification_message:
           name: "Notification Message"
-          description: "Message content for the notification. Use {location_name} for location and {timestamp} to include current time."
-          default: "Someone is at the {location_name}! - {timestamp}"
+          description: |
+            Message template for doorbell notifications. Available variables:
+            - `{location_name}`: Location/area name
+          default: "🔔 Someone is at the {location_name}!"
           selector:
             text:
               multiline: true
@@ -130,7 +119,6 @@ variables:
   notification_title_template: !input notification_title
   notification_message_template: !input notification_message
   has_camera: "{{ camera_entity != '' and camera_entity != 'unavailable' }}"
-  current_time: "{{ now().strftime('%I:%M %p on %B %d, %Y') }}"
   cooldown_seconds: !input cooldown_period
 
 trigger:
@@ -168,7 +156,7 @@ action:
             data:
               title: "{{ notification_title_template }}"
               message: >
-                {{ notification_message_template.replace('{location_name}', location).replace('{timestamp}', current_time) }}
+                {{ notification_message_template.replace('{location_name}', location) }}
               data:
                 image: "/tmp/doorbell_snapshot_{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg"
                 priority: high
@@ -185,7 +173,7 @@ action:
         data:
           title: "{{ notification_title_template }}"
           message: >
-            {{ notification_message_template.replace('{location_name}', location).replace('{timestamp}', current_time) }}
+            {{ notification_message_template.replace('{location_name}', location) }}
           data:
             priority: high
             ttl: 0
