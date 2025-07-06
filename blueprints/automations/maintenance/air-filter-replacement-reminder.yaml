@@ -56,7 +56,6 @@ blueprint:
       name: "Threshold Configuration"
       icon: "mdi:tune"
       description: "Customize replacement alert thresholds"
-      collapsed: true
       input:
         filter_replace_threshold:
           name: "Replacement Threshold"

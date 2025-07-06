@@ -41,23 +41,6 @@ blueprint:
                 device_class: 
                   - door
                   - window
-
-    # Threshold Configuration Section
-    threshold_config:
-      name: "Threshold Configuration"
-      icon: "mdi:tune"
-      description: "Customize timing and alert thresholds"
-      input:
-        initial_delay:
-          name: "Initial Delay"
-          description: "Time to wait before sending the first notification"
-          default: 5
-          selector:
-            number:
-              min: 1
-              max: 60
-              unit_of_measurement: "minutes"
-              mode: slider
         
     # Notification Settings Section
     notification_config:
