@@ -585,7 +585,7 @@ action:
           - condition: trigger
             id: pm25_high
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "🌫️ High Particulate Matter (PM2.5)"
               message: >-
@@ -605,7 +605,7 @@ action:
           - condition: trigger
             id: pm25_normal
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "✅ PM2.5 Levels Improved"
               message: >-
@@ -616,7 +616,7 @@ action:
           - condition: trigger
             id: voc_high
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "🧪 High Volatile Organic Compounds"
               message: >-
@@ -641,7 +641,7 @@ action:
           - condition: trigger
             id: voc_normal
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "✅ VOC Levels Normal"
               message: >-
@@ -655,7 +655,7 @@ action:
           - condition: template
             value_template: "{{ ammonia_entity != '' and ammonia_entity != 'unavailable' }}"
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "⚠️ High Ammonia Detected"
               message: >-
@@ -676,7 +676,7 @@ action:
           - condition: template
             value_template: "{{ ethanol_entity != '' and ethanol_entity != 'unavailable' }}"
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "🍷 High Ethanol Detected"  
               message: >-
@@ -697,7 +697,7 @@ action:
           - condition: template
             value_template: "{{ methane_entity != '' and methane_entity != 'unavailable' }}"
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "⚠️ Methane Detected"
               message: >-
@@ -719,7 +719,7 @@ action:
           - condition: template
             value_template: "{{ hydrogen_entity != '' and hydrogen_entity != 'unavailable' }}"
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "⚠️ High Hydrogen Detected"
               message: >-
@@ -739,7 +739,7 @@ action:
           - condition: template
             value_template: "{{ nitrogen_dioxide_entity != '' and nitrogen_dioxide_entity != 'unavailable' }}"
         sequence:
-          - service: {{ notification_service }}
+          - service: "{{ notification_service }}"
             data:
               title: "⚠️ High Nitrogen Dioxide Detected"
               message: >-
