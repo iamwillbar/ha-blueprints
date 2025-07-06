@@ -29,7 +29,7 @@ blueprint:
     - MiCS sensor readings may be less reliable than primary sensors
     - Critical CO alerts will repeat until levels normalize
   domain: automation
-  author: "Home Assistant Community"
+  author: "William Bartholomew"
   homeassistant:
     min_version: "2024.6.0"
   input:

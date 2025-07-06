@@ -99,6 +99,8 @@ def process_blueprints():
             # Get commit history and calculate version
             commits = get_git_commits_for_file(filepath)
             version = calculate_semver(commits, filepath)
+            # Extract latest commit hash from the first commit in the list
+            latest_commit = commits[0].split(' ')[0] if commits and commits[0].strip() else None
             
             # Create versioned blueprint
             original_name = data['blueprint']['name']
@@ -146,7 +148,8 @@ def process_blueprints():
                 'author': data['blueprint'].get('author', ''),
                 'file_path': rel_path,
                 'min_version': data['blueprint'].get('homeassistant', {}).get('min_version', ''),
-                'category': os.path.dirname(rel_path) if os.path.dirname(rel_path) else 'General'
+                'category': os.path.dirname(rel_path) if os.path.dirname(rel_path) else 'General',
+                'latest_commit': latest_commit
             })
             
             print(f'✅ Processed {filepath} -> v{version}')

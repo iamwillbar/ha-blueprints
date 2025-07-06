@@ -27,7 +27,7 @@ blueprint:
     - Will not lock if door sensor shows open
     - Optional notifications confirm successful locking
   domain: automation
-  author: "Home Assistant Community"
+  author: "William Bartholomew"
   homeassistant:
     min_version: "2024.6.0"
   input:

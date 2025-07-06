@@ -20,7 +20,7 @@ blueprint:
     - Set max reminders to 0 for unlimited reminders
     - Resolution notifications help confirm doors/windows were closed
   domain: automation
-  author: "Home Assistant Community"
+  author: "William Bartholomew"
   homeassistant:
     min_version: "2024.6.0"
   input:

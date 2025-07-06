@@ -24,7 +24,7 @@ blueprint:
     - **Baby Room**: 68-72°F (20-22.2°C)
     
   domain: automation
-  author: "Home Assistant Community"
+  author: "William Bartholomew"
   homeassistant:
     min_version: "2024.6.0"
   input:

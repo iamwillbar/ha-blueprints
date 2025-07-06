@@ -25,7 +25,7 @@ blueprint:
     - Notifications will persist until filters are replaced
     - Works with HVAC systems, air purifiers, and standalone filters
   domain: automation
-  author: "Home Assistant Community"
+  author: "William Bartholomew"
   homeassistant:
     min_version: "2024.6.0"
   input:

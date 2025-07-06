@@ -23,7 +23,7 @@ blueprint:
     - Compatible with mobile apps, persistent notifications, and third-party services
     
   domain: automation
-  author: "Home Assistant Community"
+  author: "William Bartholomew"
   homeassistant:
     min_version: "2024.6.0"
   input:
