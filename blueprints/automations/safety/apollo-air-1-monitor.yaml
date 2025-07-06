@@ -5,16 +5,17 @@ blueprint:
     
     **Features:**
     - Critical CO alerts with repeated notifications until resolved
-    - Standard air quality monitoring (CO2, PM2.5, VOC)
+    - Standard air quality monitoring (CO2, PM2.5, VOC) with configurable reminders
     - Optional MiCS-4514 gas sensor support
     - Configurable thresholds based on EPA/WHO guidelines
-    - Location-based notifications
-    - Debug logging capabilities
+    - Separate notification services for critical vs standard alerts
+    - Customizable notification messages and reminder intervals
+    - Optional resolution notifications
     
-    **Critical Alerts (repeated every 5 minutes):**
+    **Critical Alerts (repeated every 5 minutes by default):**
     - Carbon Monoxide (CO) - potentially life-threatening
     
-    **Standard Alerts (single notification):**
+    **Standard Alerts (hourly reminders by default):**
     - CO2 levels above 1000 ppm (poor ventilation)
     - PM2.5 levels above 35 µg/m³ (unhealthy air)
     - SEN55 VOC above 250 (poor air quality)
@@ -28,6 +29,7 @@ blueprint:
     - Thresholds based on EPA, WHO, and ASHRAE guidelines
     - MiCS sensor readings may be less reliable than primary sensors
     - Critical CO alerts will repeat until levels normalize
+    - Standard alerts can be configured with reminders or single notifications
   domain: automation
   author: "William Bartholomew"
   homeassistant:
@@ -51,7 +53,7 @@ blueprint:
         
         co_sensor:
           name: Carbon Monoxide Sensor
-          description: Select your Apollo AIR-1 carbon monoxide sensor
+          description: Select your Apollo AIR-1 CO sensor
           selector:
             entity:
               filter:
@@ -80,140 +82,191 @@ blueprint:
         
         device_location:
           name: Device Location Name
-          description: Name of the location for notifications (e.g., "Kitchen", "Living Room")
-          default: "Unknown Location"
+          description: Descriptive name for the sensor location (e.g., 'Living Room', 'Basement')
+          default: "Home"
           selector:
             text:
+        
+        # Optional MiCS Gas Sensors
+        ammonia_sensor:
+          name: Ammonia Sensor (Optional)
+          description: Optional MiCS-4514 ammonia sensor if installed
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+        
+        ethanol_sensor:
+          name: Ethanol Sensor (Optional)
+          description: Optional MiCS-4514 ethanol sensor if installed
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+        
+        methane_sensor:
+          name: Methane Sensor (Optional)
+          description: Optional MiCS-4514 methane sensor if installed
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+        
+        hydrogen_sensor:
+          name: Hydrogen Sensor (Optional)
+          description: Optional MiCS-4514 hydrogen sensor if installed
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+        
+        nitrogen_dioxide_sensor:
+          name: Nitrogen Dioxide Sensor (Optional)
+          description: Optional MiCS-4514 NO2 sensor if installed
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
     
     # Threshold Configuration Section
     threshold_config:
       name: "Threshold Configuration"
       icon: "mdi:tune"
       description: "Customize alert thresholds based on your environment"
-      collapsed: true
       input:
         co2_threshold:
           name: CO2 Alert Threshold
-          description: "CO2 level that triggers an alert (ASHRAE recommendation: 1000 ppm)"
+          description: "CO2 level that triggers poor ventilation alerts (EPA: 1000ppm)"
           default: 1000
           selector:
             number:
-              min: 800
-              max: 2000
+              min: 400
+              max: 5000
               step: 50
               unit_of_measurement: "ppm"
         
         co2_clear_threshold:
           name: CO2 Clear Threshold
-          description: "CO2 level below which alerts clear (prevents flickering)"
-          default: 950
+          description: "CO2 level below which alerts are considered resolved"
+          default: 800
           selector:
             number:
-              min: 750
-              max: 1950
+              min: 400
+              max: 2000
               step: 50
               unit_of_measurement: "ppm"
         
         pm25_threshold:
           name: PM2.5 Alert Threshold
-          description: "PM2.5 level that triggers an alert (EPA unhealthy: 35 µg/m³)"
+          description: "PM2.5 level that triggers air quality alerts (EPA: 35µg/m³)"
           default: 35
           selector:
             number:
-              min: 12
+              min: 10
               max: 100
-              step: 1
+              step: 5
               unit_of_measurement: "µg/m³"
         
         pm25_clear_threshold:
           name: PM2.5 Clear Threshold
-          description: "PM2.5 level below which alerts clear"
-          default: 30
+          description: "PM2.5 level below which alerts are considered resolved"
+          default: 25
           selector:
             number:
-              min: 10
-              max: 95
-              step: 1
+              min: 5
+              max: 50
+              step: 5
               unit_of_measurement: "µg/m³"
         
         voc_threshold:
           name: VOC Alert Threshold
-          description: "SEN55 VOC level that triggers an alert (poor air quality: 250)"
+          description: "VOC index level that triggers air quality alerts"
           default: 250
           selector:
             number:
-              min: 150
-              max: 400
-              step: 10
+              min: 100
+              max: 500
+              step: 25
         
         voc_clear_threshold:
           name: VOC Clear Threshold
-          description: "SEN55 VOC level below which alerts clear"
+          description: "VOC index level below which alerts are considered resolved"
           default: 200
           selector:
             number:
-              min: 100
-              max: 350
-              step: 10
+              min: 50
+              max: 300
+              step: 25
         
         co_warning_threshold:
           name: CO Warning Threshold
-          description: "Carbon monoxide level for warning alerts"
-          default: 30
+          description: "CO level for warning alerts (OSHA: 35ppm)"
+          default: 35
           selector:
             number:
               min: 10
-              max: 50
+              max: 100
               step: 5
               unit_of_measurement: "ppm"
         
         co_critical_threshold:
           name: CO Critical Threshold
-          description: "Carbon monoxide level for critical alerts (UL standard: 70 ppm)"
-          default: 70
+          description: "CO level for critical alerts (OSHA: 200ppm)"
+          default: 200
           selector:
             number:
               min: 50
-              max: 150
+              max: 500
               step: 10
               unit_of_measurement: "ppm"
         
         co_clear_threshold:
           name: CO Clear Threshold
-          description: "CO level below which all CO alerts clear"
+          description: "CO level below which alerts are considered resolved"
+          default: 10
+          selector:
+            number:
+              min: 5
+              max: 50
+              step: 5
+              unit_of_measurement: "ppm"
+        
+        # MiCS sensor thresholds
+        ammonia_threshold:
+          name: Ammonia Alert Threshold
+          description: "Ammonia level that triggers alerts"
           default: 25
           selector:
             number:
               min: 5
-              max: 45
-              step: 5
-              unit_of_measurement: "ppm"
-        
-        ammonia_threshold:
-          name: Ammonia Alert Threshold
-          description: "Ammonia level that triggers an alert"
-          default: 25
-          selector:
-            number:
-              min: 10
               max: 100
               step: 5
               unit_of_measurement: "ppm"
         
         ethanol_threshold:
           name: Ethanol Alert Threshold
-          description: "Ethanol level that triggers an alert"
-          default: 500
+          description: "Ethanol level that triggers alerts"
+          default: 1000
           selector:
             number:
               min: 100
-              max: 2000
+              max: 5000
               step: 100
               unit_of_measurement: "ppm"
         
         methane_threshold:
           name: Methane Alert Threshold
-          description: "Methane level that triggers an alert (MiCS sensor has known reliability issues)"
+          description: "Methane level that triggers alerts"
           default: 1000
           selector:
             number:
@@ -224,7 +277,7 @@ blueprint:
         
         hydrogen_threshold:
           name: Hydrogen Alert Threshold
-          description: "Hydrogen level that triggers an alert"
+          description: "Hydrogen level that triggers alerts"
           default: 1000
           selector:
             number:
@@ -235,12 +288,12 @@ blueprint:
         
         nitrogen_dioxide_threshold:
           name: Nitrogen Dioxide Alert Threshold
-          description: "Nitrogen dioxide level that triggers an alert"
+          description: "NO2 level that triggers alerts"
           default: 0.5
           selector:
             number:
               min: 0.1
-              max: 5.0
+              max: 5
               step: 0.1
               unit_of_measurement: "ppm"
 
@@ -251,8 +304,8 @@ blueprint:
       description: "Configure notification delivery and timing"
       input:
         notification_service:
-          name: "Notification Service"
-          description: "Select the notification service to use for alerts"
+          name: "Standard Notification Service"
+          description: "Notification service for standard air quality alerts"
           default: "notify.notify"
           selector:
             select:
@@ -262,80 +315,132 @@ blueprint:
                 - "notify.mobile_app"
                 - "notify.persistent_notification"
         
-        critical_alert_interval:
-          name: "Critical Alert Repeat Interval"
+        critical_notification_service:
+          name: "Critical Notification Service (Optional)"
+          description: "Separate notification service for critical CO alerts. Leave empty to use standard service."
+          default: ""
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+        
+        standard_reminder_interval:
+          name: "Standard Alert Reminder Interval"
+          description: "How often to repeat standard air quality alerts (0 = no reminders)"
+          default: 60
+          selector:
+            number:
+              min: 0
+              max: 480
+              step: 15
+              unit_of_measurement: "minutes"
+              mode: slider
+        
+        critical_reminder_interval:
+          name: "Critical Alert Reminder Interval"
           description: "How often to repeat critical CO alerts"
           default: 5
           selector:
             number:
               min: 1
-              max: 15
+              max: 30
               step: 1
               unit_of_measurement: "minutes"
+              mode: slider
         
-        enable_debug_mode:
-          name: "Enable Debug Mode"
-          description: "Enable debug mode to log air quality readings"
-          default: false
+        send_resolution_notifications:
+          name: "Send Resolution Notifications"
+          description: "Send notifications when air quality returns to normal (not for critical CO alerts)"
+          default: true
           selector:
             boolean:
-    
-    # Optional MiCS Gas Sensors Section
-    advanced_settings:
-      name: "Optional MiCS Gas Sensors"
-      icon: "mdi:cog"
-      description: "Configure additional gas sensors if MiCS-4514 add-on is installed"
+
+    # Notification Content Section
+    notification_content_config:
+      name: "Customize Notification Content (Optional)"
+      icon: "mdi:message-text"
+      description: "Customize notification titles and messages"
       collapsed: true
       input:
-        ammonia_sensor:
-          name: Ammonia Sensor
-          description: Select ammonia sensor if you have the MiCS-4514 add-on
-          default: ""
+        # Standard alert titles and messages
+        co2_alert_title:
+          name: "CO2 Alert Title"
+          description: "Title for CO2 alerts. Use {device_area} for location."
+          default: "💨 Poor Ventilation Alert"
           selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
+            text:
         
-        ethanol_sensor:
-          name: Ethanol Sensor
-          description: Select ethanol sensor if you have the MiCS-4514 add-on
-          default: ""
+        co2_alert_message:
+          name: "CO2 Alert Message"
+          description: "Message for CO2 alerts. Use {device_area} for location, {co2_level} for current level, {co2_limit} for threshold."
+          default: "CO2 levels are high in {device_area} ({co2_level} ppm, threshold: {co2_limit} ppm). Consider improving ventilation."
           selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
+            text:
+              multiline: true
         
-        methane_sensor:
-          name: Methane Sensor
-          description: Select methane sensor if you have the MiCS-4514 add-on
-          default: ""
+        pm25_alert_title:
+          name: "PM2.5 Alert Title"
+          description: "Title for PM2.5 alerts. Use {device_area} for location."
+          default: "🌫️ Air Quality Alert"
           selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
+            text:
         
-        hydrogen_sensor:
-          name: Hydrogen Sensor
-          description: Select hydrogen sensor if you have the MiCS-4314 add-on
-          default: ""
+        pm25_alert_message:
+          name: "PM2.5 Alert Message"
+          description: "Message for PM2.5 alerts. Use {device_area} for location, {pm25_level} for current level, {pm25_limit} for threshold."
+          default: "PM2.5 levels are unhealthy in {device_area} ({pm25_level} µg/m³, threshold: {pm25_limit} µg/m³). Air quality is poor."
           selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
+            text:
+              multiline: true
         
-        nitrogen_dioxide_sensor:
-          name: Nitrogen Dioxide Sensor
-          description: Select nitrogen dioxide sensor if you have the MiCS-4514 add-on
-          default: ""
+        voc_alert_title:
+          name: "VOC Alert Title"
+          description: "Title for VOC alerts. Use {device_area} for location."
+          default: "🫧 VOC Alert"
           selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
+            text:
+        
+        voc_alert_message:
+          name: "VOC Alert Message"
+          description: "Message for VOC alerts. Use {device_area} for location, {voc_level} for current level, {voc_limit} for threshold."
+          default: "VOC levels are elevated in {device_area} (index: {voc_level}, threshold: {voc_limit}). Poor air quality detected."
+          selector:
+            text:
+              multiline: true
+        
+        # Critical CO alert titles and messages
+        co_warning_title:
+          name: "CO Warning Title"
+          description: "Title for CO warning alerts. Use {device_area} for location."
+          default: "⚠️ Carbon Monoxide Warning"
+          selector:
+            text:
+        
+        co_warning_message:
+          name: "CO Warning Message"
+          description: "Message for CO warning alerts. Use {device_area} for location, {co_level} for current level, {co_warning_limit} for threshold."
+          default: "⚠️ Carbon monoxide detected in {device_area} ({co_level} ppm, warning threshold: {co_warning_limit} ppm). Monitor levels closely."
+          selector:
+            text:
+              multiline: true
+        
+        co_critical_title:
+          name: "CO Critical Title"
+          description: "Title for critical CO alerts. Use {device_area} for location."
+          default: "🚨 CRITICAL: Carbon Monoxide"
+          selector:
+            text:
+        
+        co_critical_message:
+          name: "CO Critical Message"
+          description: "Message for critical CO alerts. Use {device_area} for location, {co_level} for current level, {co_critical_limit} for threshold."
+          default: "🚨 CRITICAL: Dangerous carbon monoxide levels in {device_area} ({co_level} ppm, critical threshold: {co_critical_limit} ppm). Evacuate immediately and ventilate!"
+          selector:
+            text:
+              multiline: true
 
 variables:
   co2_entity: !input co2_sensor
@@ -348,6 +453,8 @@ variables:
   hydrogen_entity: !input hydrogen_sensor
   nitrogen_dioxide_entity: !input nitrogen_dioxide_sensor
   notification_service: !input notification_service
+  critical_notification_service: !input critical_notification_service
+  effective_critical_service: "{{ critical_notification_service if critical_notification_service != '' else notification_service }}"
   device_area: !input device_location
   co2_limit: !input co2_threshold
   co2_clear: !input co2_clear_threshold
@@ -363,11 +470,23 @@ variables:
   methane_limit: !input methane_threshold
   hydrogen_limit: !input hydrogen_threshold
   nitrogen_dioxide_limit: !input nitrogen_dioxide_threshold
-  repeat_interval: !input critical_alert_interval
-  debug_enabled: !input enable_debug_mode
+  standard_reminder_interval: !input standard_reminder_interval
+  critical_reminder_interval: !input critical_reminder_interval
+  send_resolution_notifications: !input send_resolution_notifications
+  # Message templates
+  co2_alert_title_template: !input co2_alert_title
+  co2_alert_message_template: !input co2_alert_message
+  pm25_alert_title_template: !input pm25_alert_title
+  pm25_alert_message_template: !input pm25_alert_message
+  voc_alert_title_template: !input voc_alert_title
+  voc_alert_message_template: !input voc_alert_message
+  co_warning_title_template: !input co_warning_title
+  co_warning_message_template: !input co_warning_message
+  co_critical_title_template: !input co_critical_title
+  co_critical_message_template: !input co_critical_message
 
 mode: parallel
-max: 20
+max_exceeded: silent
 
 trigger:
   # CO2 monitoring
@@ -450,8 +569,13 @@ trigger:
   
   # Repeat critical CO alerts
   - platform: time_pattern
-    minutes: !input critical_alert_interval
+    minutes: !input critical_reminder_interval
     id: co_repeat_check
+  
+  # Repeat standard alerts (if enabled)
+  - platform: time_pattern
+    minutes: !input standard_reminder_interval
+    id: standard_repeat_check
 
 condition: []
 
@@ -462,62 +586,32 @@ action:
           - condition: trigger
             id: co_critical
         sequence:
-          - service: "{{ notification_service }}"
+          - service: "{{ effective_critical_service }}"
             data:
-              title: "🚨 CRITICAL: Carbon Monoxide Detected!"
-              message: >-
-                EVACUATE IMMEDIATELY! Dangerous CO level detected: {{ states(co_entity) | round(1) }}ppm
-                
-                Location: {{ device_area }}
-                Time: {{ now().strftime('%I:%M %p') }}
-                
-                ⚠️ Move to fresh air immediately and call emergency services!
-                
-                This alert will repeat every {{ repeat_interval }} minutes until CO levels drop below {{ co_clear_limit }}ppm.
-              data:
-                priority: high
-                ttl: 0
-                actions:
-                  - action: "call_911"
-                    title: "Call 911"
-                  - action: "silence_co"
-                    title: "Acknowledge (CO still present)"
+              title: >
+                {{ co_critical_title_template.replace('{device_area}', device_area) }}
+              message: >
+                {{ co_critical_message_template.replace('{device_area}', device_area).replace('{co_level}', states(co_entity)).replace('{co_critical_limit}', co_critical_limit | string) }}
                 
       - conditions:
           - condition: trigger
             id: co_warning  
         sequence:
-          - service: "{{ notification_service }}"
+          - service: "{{ effective_critical_service }}"
             data:
-              title: "⚠️ WARNING: Carbon Monoxide Detected"
-              message: >-
-                CO level elevated: {{ states(co_entity) | round(1) }}ppm
-                
-                Location: {{ device_area }}
-                Time: {{ now().strftime('%I:%M %p') }}
-                
-                Immediate actions:
-                • Check fuel-burning appliances (furnace, water heater, stove)
-                • Ensure adequate ventilation
-                • Consider evacuating if levels rise
-                
-                Critical threshold: {{ co_critical_limit }}ppm
-              data:
-                priority: high
+              title: >
+                {{ co_warning_title_template.replace('{device_area}', device_area) }}
+              message: >
+                {{ co_warning_message_template.replace('{device_area}', device_area).replace('{co_level}', states(co_entity)).replace('{co_warning_limit}', co_warning_limit | string) }}
                 
       - conditions:
           - condition: trigger
             id: co_normal
         sequence:
-          - service: "{{ notification_service }}"
+          - service: "{{ effective_critical_service }}"
             data:
-              title: "✅ Carbon Monoxide Levels Normal"
-              message: >-
-                CO levels have returned to safe levels.
-                Current: {{ states(co_entity) | round(1) }}ppm
-                Location: {{ device_area }}
-                
-                Recommendation: Have fuel-burning appliances inspected by a professional to prevent future CO issues.
+              title: "✅ Carbon Monoxide Safe"
+              message: "Carbon monoxide levels have returned to safe levels in {{ device_area }} ({{ states(co_entity) }} ppm). All clear."
                 
       # === REPEATED CO CRITICAL ALERTS ===
       - conditions:
@@ -526,26 +620,12 @@ action:
           - condition: template
             value_template: "{{ states(co_entity) | float(0) >= co_critical_limit }}"
         sequence:
-          - service: "{{ notification_service }}"
+          - service: "{{ effective_critical_service }}"
             data:
-              title: "🚨 CRITICAL CO ALERT - ONGOING!"
-              message: >-
-                CARBON MONOXIDE STILL DETECTED!
-                Current level: {{ states(co_entity) | round(1) }}ppm
-                Duration: Critical level detected {{ repeat_interval }} minutes ago
-                
-                If you haven't already:
-                1. Evacuate to fresh air immediately
-                2. Call emergency services (911)
-                3. Do not re-enter until cleared by professionals
-                
-                This alert will continue every {{ repeat_interval }} minutes until CO drops below {{ co_clear_limit }}ppm.
-              data:
-                priority: high
-                ttl: 0
-                actions:
-                  - action: "call_911"
-                    title: "Call 911"
+              title: >
+                {{ co_critical_title_template.replace('{device_area}', device_area) }}
+              message: >
+                {{ co_critical_message_template.replace('{device_area}', device_area).replace('{co_level}', states(co_entity)).replace('{co_critical_limit}', co_critical_limit | string) }}
 
       # === STANDARD AIR QUALITY ALERTS ===  
       - conditions:
@@ -554,32 +634,21 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "💨 High CO2 Levels Detected"
-              message: >-
-                CO2: {{ states(co2_entity) | round(0) }}ppm (threshold: {{ co2_limit }}ppm)
-                Location: {{ device_area }}
-                
-                Poor ventilation detected. Recommendations:
-                • Open windows for fresh air
-                • Turn on ventilation/HVAC fan
-                • Reduce occupancy if possible
-                • Check for blocked air vents
-                
-                High CO2 can cause drowsiness and reduced cognitive function.
-                Alert will clear when CO2 drops below {{ co2_clear }}ppm.
+              title: >
+                {{ co2_alert_title_template.replace('{device_area}', device_area) }}
+              message: >
+                {{ co2_alert_message_template.replace('{device_area}', device_area).replace('{co2_level}', states(co2_entity)).replace('{co2_limit}', co2_limit | string) }}
                 
       - conditions:
           - condition: trigger
             id: co2_normal
+          - condition: template
+            value_template: "{{ send_resolution_notifications }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "✅ CO2 Levels Improved"
-              message: >-
-                CO2 levels have improved to {{ states(co2_entity) | round(0) }}ppm
-                Location: {{ device_area }}
-                
-                Ventilation appears adequate. Good job!
+              title: "✅ Ventilation Normal"
+              message: "CO2 levels have returned to normal in {{ device_area }} ({{ states(co2_entity) }} ppm)."
                 
       - conditions:
           - condition: trigger
@@ -587,30 +656,21 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "🌫️ High Particulate Matter (PM2.5)"
-              message: >-
-                PM2.5: {{ states(pm25_entity) | round(1) }}µg/m³ (threshold: {{ pm25_limit }}µg/m³)
-                Location: {{ device_area }}
-                
-                Air quality is unhealthy. Consider:
-                • Running air purifiers with HEPA filters
-                • Closing windows if outdoor air is poor
-                • Limiting outdoor activities
-                • Checking/replacing HVAC filters
-                • Avoiding activities that create particles (candles, cooking without ventilation)
-                
-                Alert will clear when PM2.5 drops below {{ pm25_clear }}µg/m³.
+              title: >
+                {{ pm25_alert_title_template.replace('{device_area}', device_area) }}
+              message: >
+                {{ pm25_alert_message_template.replace('{device_area}', device_area).replace('{pm25_level}', states(pm25_entity)).replace('{pm25_limit}', pm25_limit | string) }}
                 
       - conditions:
           - condition: trigger
             id: pm25_normal
+          - condition: template
+            value_template: "{{ send_resolution_notifications }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "✅ PM2.5 Levels Improved"
-              message: >-
-                Particulate matter has decreased to healthy levels: {{ states(pm25_entity) | round(1) }}µg/m³
-                Location: {{ device_area }}
+              title: "✅ Air Quality Normal"
+              message: "PM2.5 levels have returned to normal in {{ device_area }} ({{ states(pm25_entity) }} µg/m³)."
                 
       - conditions:
           - condition: trigger
@@ -618,35 +678,68 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "🧪 High Volatile Organic Compounds"
-              message: >-
-                SEN55 VOC: {{ states(voc_entity) | round(0) }} (threshold: {{ voc_limit }})
-                Location: {{ device_area }}
-                
-                Very poor VOC levels detected. Possible sources:
-                • Cleaning products or chemicals
-                • Paint, varnish, or adhesives
-                • New furniture or carpets off-gassing
-                • Cooking activities
-                • Personal care products
-                
-                Recommendations:
-                • Increase ventilation immediately
-                • Identify and remove/reduce source if possible
-                • Allow time for off-gassing of new materials
-                
-                Alert will clear when VOC drops below {{ voc_clear }}.
+              title: >
+                {{ voc_alert_title_template.replace('{device_area}', device_area) }}
+              message: >
+                {{ voc_alert_message_template.replace('{device_area}', device_area).replace('{voc_level}', states(voc_entity)).replace('{voc_limit}', voc_limit | string) }}
                 
       - conditions:
           - condition: trigger
             id: voc_normal
+          - condition: template
+            value_template: "{{ send_resolution_notifications }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "✅ VOC Levels Normal"
-              message: >-
-                Volatile organic compounds back to normal levels: {{ states(voc_entity) | round(0) }}
-                Location: {{ device_area }}
+              title: "✅ VOC Normal"
+              message: "VOC levels have returned to normal in {{ device_area }} (index: {{ states(voc_entity) }})."
+      
+      # === STANDARD ALERT REMINDERS ===
+      - conditions:
+          - condition: trigger
+            id: standard_repeat_check
+          - condition: template
+            value_template: "{{ standard_reminder_interval > 0 }}"
+          - condition: or
+            conditions:
+              - condition: template
+                value_template: "{{ states(co2_entity) | float(0) >= co2_limit }}"
+              - condition: template
+                value_template: "{{ states(pm25_entity) | float(0) >= pm25_limit }}"
+              - condition: template
+                value_template: "{{ states(voc_entity) | float(0) >= voc_limit }}"
+        sequence:
+          # Send reminders for active alerts
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ states(co2_entity) | float(0) >= co2_limit }}"
+                sequence:
+                  - service: "{{ notification_service }}"
+                    data:
+                      title: "🔄 {{ co2_alert_title_template.replace('{device_area}', device_area) }}"
+                      message: >
+                        {{ co2_alert_message_template.replace('{device_area}', device_area).replace('{co2_level}', states(co2_entity)).replace('{co2_limit}', co2_limit | string) }}
+              
+              - conditions:
+                  - condition: template
+                    value_template: "{{ states(pm25_entity) | float(0) >= pm25_limit }}"
+                sequence:
+                  - service: "{{ notification_service }}"
+                    data:
+                      title: "🔄 {{ pm25_alert_title_template.replace('{device_area}', device_area) }}"
+                      message: >
+                        {{ pm25_alert_message_template.replace('{device_area}', device_area).replace('{pm25_level}', states(pm25_entity)).replace('{pm25_limit}', pm25_limit | string) }}
+              
+              - conditions:
+                  - condition: template
+                    value_template: "{{ states(voc_entity) | float(0) >= voc_limit }}"
+                sequence:
+                  - service: "{{ notification_service }}"
+                    data:
+                      title: "🔄 {{ voc_alert_title_template.replace('{device_area}', device_area) }}"
+                      message: >
+                        {{ voc_alert_message_template.replace('{device_area}', device_area).replace('{voc_level}', states(voc_entity)).replace('{voc_limit}', voc_limit | string) }}
                 
       # === ADDITIONAL GAS ALERTS (if MiCS sensor present) ===
       - conditions:
@@ -657,18 +750,9 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "⚠️ High Ammonia Detected"
-              message: >-
-                Ammonia level: {{ states(ammonia_entity) | round(1) }}ppm (threshold: {{ ammonia_limit }}ppm)
-                Location: {{ device_area }}
-                
-                Possible sources:
-                • Cleaning products (especially glass/floor cleaners)
-                • Pet waste areas
-                • Fertilizers
-                • Refrigeration leaks
-                
-                Ensure adequate ventilation and check for spills or leaks.
+              title: "🧪 Ammonia Alert - {{ device_area }}"
+              message: >
+                High ammonia levels detected in {{ device_area }}: {{ states(ammonia_entity) | round(2) }}ppm (threshold: {{ ammonia_limit }}ppm)
                 
       - conditions:
           - condition: trigger
@@ -678,18 +762,9 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "🍷 High Ethanol Detected"  
-              message: >-
-                Ethanol level: {{ states(ethanol_entity) | round(0) }}ppm (threshold: {{ ethanol_limit }}ppm)
-                Location: {{ device_area }}
-                
-                This may indicate:
-                • Alcohol vapors
-                • Cleaning solvents
-                • Hand sanitizers
-                • Fermentation processes
-                
-                Ensure adequate ventilation.
+              title: "🍷 Ethanol Alert - {{ device_area }}"
+              message: >
+                High ethanol levels detected in {{ device_area }}: {{ states(ethanol_entity) | round(2) }}ppm (threshold: {{ ethanol_limit }}ppm)
                 
       - conditions:
           - condition: trigger
@@ -699,19 +774,9 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "⚠️ Methane Detected"
-              message: >-
-                Methane level: {{ states(methane_entity) | round(0) }}ppm (threshold: {{ methane_limit }}ppm)
-                Location: {{ device_area }}
-                
-                ⚠️ Note: MiCS sensor methane readings can be unreliable and may spike with other gases.
-                
-                If consistent, possible sources:
-                • Natural gas leaks
-                • Sewer gases
-                • Decomposing organic matter
-                
-                Consider professional gas leak detection if reading persists.
+              title: "🔥 Methane Alert - {{ device_area }}"
+              message: >
+                High methane levels detected in {{ device_area }}: {{ states(methane_entity) | round(2) }}ppm (threshold: {{ methane_limit }}ppm)
                 
       - conditions:
           - condition: trigger
@@ -721,17 +786,9 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "⚠️ High Hydrogen Detected"
-              message: >-
-                Hydrogen level: {{ states(hydrogen_entity) | round(0) }}ppm (threshold: {{ hydrogen_limit }}ppm)
-                Location: {{ device_area }}
-                
-                Possible sources:
-                • Battery charging (especially lead-acid)
-                • Industrial processes
-                • Water electrolysis
-                
-                Ensure adequate ventilation.
+              title: "⚡ Hydrogen Alert - {{ device_area }}"
+              message: >
+                High hydrogen levels detected in {{ device_area }}: {{ states(hydrogen_entity) | round(2) }}ppm (threshold: {{ hydrogen_limit }}ppm)
                 
       - conditions:
           - condition: trigger
@@ -741,33 +798,6 @@ action:
         sequence:
           - service: "{{ notification_service }}"
             data:
-              title: "⚠️ High Nitrogen Dioxide Detected"
-              message: >-
-                Nitrogen Dioxide level: {{ states(nitrogen_dioxide_entity) | round(2) }}ppm (threshold: {{ nitrogen_dioxide_limit }}ppm)
-                Location: {{ device_area }}
-                
-                Possible sources:
-                • Vehicle exhaust
-                • Gas stoves/appliances
-                • Outdoor air pollution
-                • Industrial emissions
-                
-                Improve ventilation and check appliance operation.
-
-  # Debug logging
-  - condition: template
-    value_template: "{{ debug_enabled }}"
-  - service: logbook.log
-    data:
-      name: "Apollo AIR-1 Air Quality"
-      message: >-
-        Air Quality Reading - {{ device_area }}:
-        CO2: {{ states(co2_entity) | round(0) }}ppm,
-        PM2.5: {{ states(pm25_entity) | round(1) }}µg/m³,
-        SEN55 VOC: {{ states(voc_entity) | round(0) }},
-        CO: {{ states(co_entity) | round(1) }}ppm
-        {% if ammonia_entity != '' %}, NH3: {{ states(ammonia_entity) | round(1) }}ppm{% endif %}
-        {% if ethanol_entity != '' %}, Ethanol: {{ states(ethanol_entity) | round(0) }}ppm{% endif %}
-        {% if methane_entity != '' %}, Methane: {{ states(methane_entity) | round(0) }}ppm{% endif %}
-        {% if hydrogen_entity != '' %}, Hydrogen: {{ states(hydrogen_entity) | round(0) }}ppm{% endif %}
-        {% if nitrogen_dioxide_entity != '' %}, NO2: {{ states(nitrogen_dioxide_entity) | round(2) }}ppm{% endif %}
+              title: "💨 NO2 Alert - {{ device_area }}"
+              message: >
+                High nitrogen dioxide levels detected in {{ device_area }}: {{ states(nitrogen_dioxide_entity) | round(2) }}ppm (threshold: {{ nitrogen_dioxide_limit }}ppm)

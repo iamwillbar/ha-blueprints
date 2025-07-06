@@ -1,11 +1,10 @@
 blueprint:
-  name: Temperature Range Monitor with Notifications
+  name: "Temperature Range Monitor"
   description: |
     Monitor a temperature sensor and send notifications when temperature goes outside
     of an allowed range for a specified period. Supports repeat notifications while
     out of range and notifications when returning to normal range.
-    
-    **Features:**
+                                title: "🔄 {{ high_temp_alert_title_template.replace('{location}', location) }}"    **Features:**
     - Configurable temperature range monitoring
     - Customizable notification delay threshold
     - Repeat notifications while out of range
@@ -77,7 +76,6 @@ blueprint:
       name: "Threshold Configuration"
       icon: "mdi:tune"
       description: "Customize timing and alert thresholds"
-      collapsed: true
       input:
         time_threshold:
           name: Time Threshold
@@ -127,6 +125,74 @@ blueprint:
           selector:
             boolean:
 
+    # Notification Content Section
+    notification_content_config:
+      name: "Customize Notification Content (Optional)"
+      icon: "mdi:message-text"
+      description: "Customize notification titles and messages"
+      collapsed: true
+      input:
+        low_temp_alert_title:
+          name: "Low Temperature Alert Title"
+          description: "Title for low temperature alerts. Use {location} for location name."
+          default: "🥶 Temperature Alert"
+          selector:
+            text:
+        
+        low_temp_alert_message:
+          name: "Low Temperature Alert Message"
+          description: "Message for low temperature alerts. Use {location} for location, {current_temp} for current temperature, {min_temp} for minimum, {max_temp} for maximum, {temp_unit} for unit, {timestamp} for current time."
+          default: "Temperature is too LOW: {current_temp}{temp_unit} in {location}\n\n📊 Current: {current_temp}{temp_unit}\n📉 Minimum: {min_temp}{temp_unit}\n📈 Maximum: {max_temp}{temp_unit}\n\n{timestamp}"
+          selector:
+            text:
+              multiline: true
+        
+        high_temp_alert_title:
+          name: "High Temperature Alert Title"
+          description: "Title for high temperature alerts. Use {location} for location name."
+          default: "🔥 Temperature Alert"
+          selector:
+            text:
+        
+        high_temp_alert_message:
+          name: "High Temperature Alert Message"
+          description: "Message for high temperature alerts. Use {location} for location, {current_temp} for current temperature, {min_temp} for minimum, {max_temp} for maximum, {temp_unit} for unit, {timestamp} for current time."
+          default: "Temperature is too HIGH: {current_temp}{temp_unit} in {location}\n\n📊 Current: {current_temp}{temp_unit}\n📉 Minimum: {min_temp}{temp_unit}\n📈 Maximum: {max_temp}{temp_unit}\n\n{timestamp}"
+          selector:
+            text:
+              multiline: true
+        
+        low_temp_reminder_message:
+          name: "Low Temperature Reminder Message"
+          description: "Message for repeated low temperature alerts. Use {location} for location, {current_temp} for current temperature, {temp_unit} for unit, {duration} for how long out of range, {timestamp} for current time."
+          default: "Temperature remains too LOW: {current_temp}{temp_unit} in {location}\n\nDuration: {duration}\n{timestamp}"
+          selector:
+            text:
+              multiline: true
+        
+        high_temp_reminder_message:
+          name: "High Temperature Reminder Message"
+          description: "Message for repeated high temperature alerts. Use {location} for location, {current_temp} for current temperature, {temp_unit} for unit, {duration} for how long out of range, {timestamp} for current time."
+          default: "Temperature remains too HIGH: {current_temp}{temp_unit} in {location}\n\nDuration: {duration}\n{timestamp}"
+          selector:
+            text:
+              multiline: true
+        
+        recovery_notification_title:
+          name: "Recovery Notification Title"
+          description: "Title when temperature returns to normal. Use {location} for location name."
+          default: "✅ Temperature Normal"
+          selector:
+            text:
+        
+        recovery_notification_message:
+          name: "Recovery Notification Message"
+          description: "Message when temperature returns to normal. Use {location} for location, {current_temp} for current temperature, {min_temp} for minimum, {max_temp} for maximum, {temp_unit} for unit, {timestamp} for current time."
+          default: "Temperature has returned to normal range: {current_temp}{temp_unit} in {location}\n\n📊 Current: {current_temp}{temp_unit}\n📉 Minimum: {min_temp}{temp_unit}\n📈 Maximum: {max_temp}{temp_unit}\n\n{timestamp}"
+          selector:
+            text:
+              multiline: true
+
 variables:
   sensor_name: !input temperature_sensor
   min_temp: !input min_temperature
@@ -134,6 +200,16 @@ variables:
   location: !input location_name
   current_temp: "{{ states(sensor_name) | float }}"
   temp_unit: "{{ state_attr(sensor_name, 'unit_of_measurement') }}"
+  timestamp: "{{ now().strftime('%I:%M %p on %B %d, %Y') }}"
+  # Message templates
+  low_temp_alert_title_template: !input low_temp_alert_title
+  low_temp_alert_message_template: !input low_temp_alert_message
+  high_temp_alert_title_template: !input high_temp_alert_title
+  high_temp_alert_message_template: !input high_temp_alert_message
+  low_temp_reminder_message_template: !input low_temp_reminder_message
+  high_temp_reminder_message_template: !input high_temp_reminder_message
+  recovery_notification_title_template: !input recovery_notification_title
+  recovery_notification_message_template: !input recovery_notification_message
 
 trigger:
   # Trigger when temperature goes outside range
@@ -167,15 +243,10 @@ action:
         sequence:
           - service: !input notification_service
             data:
-              title: "🥶 Temperature Alert: {{ location }}"
+              title: >
+                {{ low_temp_alert_title_template.replace('{location}', location) }}
               message: >
-                Temperature is too LOW: {{ current_temp }}{{ temp_unit }}
-                
-                📊 Current: {{ current_temp }}{{ temp_unit }}
-                📉 Minimum: {{ min_temp }}{{ temp_unit }}
-                📈 Maximum: {{ max_temp }}{{ temp_unit }}
-                
-                Time: {{ now().strftime('%I:%M %p on %B %d, %Y') }}
+                {{ low_temp_alert_message_template.replace('{location}', location).replace('{current_temp}', current_temp | string).replace('{min_temp}', min_temp | string).replace('{max_temp}', max_temp | string).replace('{temp_unit}', temp_unit).replace('{timestamp}', timestamp) }}
           
           # Set up repeat notifications if enabled
           - if:
@@ -196,12 +267,9 @@ action:
                       then:
                         - service: !input notification_service
                           data:
-                            title: "🥶 Temperature Still Low: {{ location }}"
+                            title: "🔄 {{ low_temp_alert_title_template.replace('{location}', location) }}"
                             message: >
-                              Temperature remains too LOW: {{ states(sensor_name) | float }}{{ temp_unit }}
-                              
-                              Duration: {{ relative_time(trigger.from_state.last_changed) }}
-                              Time: {{ now().strftime('%I:%M %p on %B %d, %Y') }}
+                              {{ low_temp_reminder_message_template.replace('{location}', location).replace('{current_temp}', states(sensor_name) | string).replace('{temp_unit}', temp_unit).replace('{duration}', relative_time(trigger.from_state.last_changed)).replace('{timestamp}', timestamp) }}
       
       # Temperature too high
       - conditions:
@@ -210,15 +278,10 @@ action:
         sequence:
           - service: !input notification_service
             data:
-              title: "🔥 Temperature Alert: {{ location }}"
+              title: >
+                {{ high_temp_alert_title_template.replace('{location}', location) }}
               message: >
-                Temperature is too HIGH: {{ current_temp }}{{ temp_unit }}
-                
-                📊 Current: {{ current_temp }}{{ temp_unit }}
-                📉 Minimum: {{ min_temp }}{{ temp_unit }}
-                📈 Maximum: {{ max_temp }}{{ temp_unit }}
-                
-                Time: {{ now().strftime('%I:%M %p on %B %d, %Y') }}
+                {{ high_temp_alert_message_template.replace('{location}', location).replace('{current_temp}', current_temp | string).replace('{min_temp}', min_temp | string).replace('{max_temp}', max_temp | string).replace('{temp_unit}', temp_unit).replace('{timestamp}', timestamp) }}
           
           # Set up repeat notifications if enabled
           - if:
@@ -239,12 +302,9 @@ action:
                       then:
                         - service: !input notification_service
                           data:
-                            title: "🔥 Temperature Still High: {{ location }}"
+                            title: "� {{ high_temp_alert_title_template.replace('{location}', location) }}"
                             message: >
-                              Temperature remains too HIGH: {{ states(sensor_name) | float }}{{ temp_unit }}
-                              
-                              Duration: {{ relative_time(trigger.from_state.last_changed) }}
-                              Time: {{ now().strftime('%I:%M %p on %B %d, %Y') }}
+                              {{ high_temp_reminder_message_template.replace('{location}', location).replace('{current_temp}', states(sensor_name) | string).replace('{temp_unit}', temp_unit).replace('{duration}', relative_time(trigger.from_state.last_changed)).replace('{timestamp}', timestamp) }}
       
       # Temperature back in range
       - conditions:
@@ -255,15 +315,10 @@ action:
         sequence:
           - service: !input notification_service
             data:
-              title: "✅ Temperature Normal: {{ location }}"
+              title: >
+                {{ recovery_notification_title_template.replace('{location}', location) }}
               message: >
-                Temperature has returned to normal range: {{ current_temp }}{{ temp_unit }}
-                
-                📊 Current: {{ current_temp }}{{ temp_unit }}
-                📉 Minimum: {{ min_temp }}{{ temp_unit }}
-                📈 Maximum: {{ max_temp }}{{ temp_unit }}
-                
-                Time: {{ now().strftime('%I:%M %p on %B %d, %Y') }}
+                {{ recovery_notification_message_template.replace('{location}', location).replace('{current_temp}', current_temp | string).replace('{min_temp}', min_temp | string).replace('{max_temp}', max_temp | string).replace('{temp_unit}', temp_unit).replace('{timestamp}', timestamp) }}
 
 # Use parallel mode to allow multiple temperature ranges to be monitored simultaneously
 # Silent mode prevents log spam if multiple instances trigger

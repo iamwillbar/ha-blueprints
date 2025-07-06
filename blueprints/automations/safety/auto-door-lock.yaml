@@ -66,7 +66,6 @@ blueprint:
       name: "Threshold Configuration"
       icon: "mdi:tune"
       description: "Configure when the door should be automatically locked"
-      collapsed: true
       input:
         lock_delay:
           name: "Lock Delay"
@@ -76,17 +75,6 @@ blueprint:
             number:
               min: 1
               max: 120
-              unit_of_measurement: "minutes"
-              mode: slider
-        
-        grace_period:
-          name: "Grace Period"
-          description: "Additional time to wait if door was recently unlocked manually (prevents immediate re-locking)"
-          default: 2
-          selector:
-            number:
-              min: 0
-              max: 30
               unit_of_measurement: "minutes"
               mode: slider
 
@@ -117,7 +105,7 @@ blueprint:
 
     # Notification Content Section
     notification_content_config:
-      name: "Notification Content"
+      name: "Customize Notification Content (Optional)"
       icon: "mdi:message-text"
       description: "Customize notification titles and messages"
       collapsed: true
@@ -136,6 +124,14 @@ blueprint:
           selector:
             text:
               multiline: true
+        
+        lock_failure_message:
+          name: "Lock Failure Message"
+          description: "Custom message when door fails to lock. Use {door_name} for door name and {attempts} for number of attempts."
+          default: "⚠️ Failed to automatically lock {door_name} after {attempts} attempts. Please check the lock status manually."
+          selector:
+            text:
+              multiline: true
 
     # Advanced Settings Section
     advanced_settings:
@@ -144,6 +140,17 @@ blueprint:
       description: "Optional advanced configuration and safety features"
       collapsed: true
       input:
+        grace_period:
+          name: "Grace Period"
+          description: "Additional time to wait if door was recently unlocked manually (prevents immediate re-locking)"
+          default: 2
+          selector:
+            number:
+              min: 0
+              max: 30
+              unit_of_measurement: "minutes"
+              mode: slider
+        
         check_lock_state:
           name: "Verify Lock State"
           description: "Check if door is already locked before attempting to lock (prevents unnecessary lock commands)"
@@ -195,6 +202,7 @@ variables:
   max_lock_attempts: !input max_lock_attempts
   lock_retry_delay: !input lock_retry_delay
   custom_lock_message: !input custom_lock_message
+  lock_failure_message: !input lock_failure_message
 
 condition:
   # Ensure door is still closed
@@ -297,5 +305,4 @@ action:
         data:
           title: "⚠️ Auto Lock Failed"
           message: >
-            Failed to automatically lock {{ door_name }} after {{ max_lock_attempts }} attempts.
-            Please check the lock status manually.
+            {{ lock_failure_message.replace('{door_name}', door_name).replace('{attempts}', max_lock_attempts | string) }}

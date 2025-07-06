@@ -74,25 +74,10 @@ blueprint:
                 - "notify.notify"
                 - "notify.mobile_app"
                 - "notify.persistent_notification"
-        
-        include_timestamp:
-          name: "Include Timestamp"
-          description: "Add timestamp to notification message"
-          default: true
-          selector:
-            boolean:
-        
-        cooldown_period:
-          name: "Cooldown Period"
-          description: "Minimum time between notifications to prevent spam"
-          default:
-            seconds: 30
-          selector:
-            duration:
 
     # Notification Content Section
     notification_content_config:
-      name: "Notification Content"
+      name: "Customize Notification Content (Optional)"
       icon: "mdi:message-text"
       description: "Customize notification titles and messages"
       collapsed: true
@@ -106,8 +91,8 @@ blueprint:
         
         notification_message:
           name: "Notification Message"
-          description: "Message content for the notification"
-          default: "Someone is at the {{ location_name }}!"
+          description: "Message content for the notification. Use {location_name} for location and {timestamp} to include current time."
+          default: "Someone is at the {location_name}! - {timestamp}"
           selector:
             text:
               multiline: true
@@ -119,6 +104,14 @@ blueprint:
       description: "Optional advanced notification configuration"
       collapsed: true
       input:
+        cooldown_period:
+          name: "Cooldown Period"
+          description: "Minimum time between notifications to prevent spam"
+          default:
+            seconds: 30
+          selector:
+            duration:
+        
         camera_timeout:
           name: "Camera Snapshot Timeout"
           description: "Maximum time to wait for camera snapshot"
@@ -137,8 +130,8 @@ variables:
   notification_title_template: !input notification_title
   notification_message_template: !input notification_message
   has_camera: "{{ camera_entity != '' and camera_entity != 'unavailable' }}"
-  timestamp_enabled: !input include_timestamp
   current_time: "{{ now().strftime('%I:%M %p on %B %d, %Y') }}"
+  cooldown_seconds: !input cooldown_period
 
 trigger:
   - platform: state
@@ -153,7 +146,7 @@ condition:
       {% if last_triggered is none %}
         true
       {% else %}
-        {{ (now() - last_triggered).total_seconds() > states('input_select.cooldown_seconds') | int(30) }}
+        {{ (now() - last_triggered).total_seconds() > cooldown_seconds.total_seconds() }}
       {% endif %}
 
 action:
@@ -175,11 +168,7 @@ action:
             data:
               title: "{{ notification_title_template }}"
               message: >
-                {{ notification_message_template }}
-                {% if timestamp_enabled %}
-                
-                Time: {{ current_time }}
-                {% endif %}
+                {{ notification_message_template.replace('{location_name}', location).replace('{timestamp}', current_time) }}
               data:
                 image: "/tmp/doorbell_snapshot_{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg"
                 priority: high
@@ -196,11 +185,7 @@ action:
         data:
           title: "{{ notification_title_template }}"
           message: >
-            {{ notification_message_template }}
-            {% if timestamp_enabled %}
-            
-            Time: {{ current_time }}
-            {% endif %}
+            {{ notification_message_template.replace('{location_name}', location).replace('{timestamp}', current_time) }}
           data:
             priority: high
             ttl: 0

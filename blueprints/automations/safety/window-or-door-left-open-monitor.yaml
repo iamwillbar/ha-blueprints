@@ -47,8 +47,36 @@ blueprint:
       name: "Threshold Configuration"
       icon: "mdi:tune"
       description: "Customize timing and alert thresholds"
-      collapsed: true
       input:
+        initial_delay:
+          name: "Initial Delay"
+          description: "Time to wait before sending the first notification"
+          default: 5
+          selector:
+            number:
+              min: 1
+              max: 60
+              unit_of_measurement: "minutes"
+              mode: slider
+        
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:bell-alert"
+      description: "Configure notification delivery and behavior"
+      input:
+        notification_service:
+          name: "Notification Service"
+          description: "Select the notification service to send alerts to"
+          default: "notify.notify"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+        
         initial_delay:
           name: "Initial Delay"
           description: "Time to wait before sending the first notification"
@@ -70,31 +98,6 @@ blueprint:
               max: 60
               unit_of_measurement: "minutes"
               mode: slider
-
-    # Notification Settings Section
-    notification_config:
-      name: "Notification Settings"
-      icon: "mdi:bell-alert"
-      description: "Configure notification delivery and behavior"
-      input:
-        notification_service:
-          name: "Notification Service"
-          description: "Select the notification service to send alerts to"
-          default: "notify.notify"
-          selector:
-            select:
-              custom_value: true
-              options:
-                - "notify.notify"
-                - "notify.mobile_app"
-                - "notify.persistent_notification"
-        
-        send_resolution_notification:
-          name: "Send Resolution Notification"
-          description: "Send a notification when the door/window is finally closed"
-          default: true
-          selector:
-            boolean:
         
         max_reminders:
           name: "Maximum Reminders"
@@ -105,10 +108,17 @@ blueprint:
               min: 0
               max: 20
               mode: box
+        
+        send_resolution_notification:
+          name: "Send Resolution Notification"
+          description: "Send a notification when the door/window is finally closed"
+          default: true
+          selector:
+            boolean:
 
     # Notification Content Section
     notification_content_config:
-      name: "Notification Content"
+      name: "Customize Notification Content (Optional)"
       icon: "mdi:message-text"
       description: "Customize notification titles and messages"
       collapsed: true

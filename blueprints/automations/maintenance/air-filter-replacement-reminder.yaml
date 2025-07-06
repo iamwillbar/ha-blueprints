@@ -90,7 +90,7 @@ blueprint:
 
     # Notification Content Section
     notification_content_config:
-      name: "Notification Content"
+      name: "Customize Notification Content (Optional)"
       icon: "mdi:message-text"
       description: "Customize notification titles and messages"
       collapsed: true
@@ -98,7 +98,7 @@ blueprint:
         notification_title:
           name: "Notification Title"
           description: "Custom title for replacement notifications"
-          default: "Air Filter Replacement Required"
+          default: "🔧 Air Filter Replacement Required"
           selector:
             text:
         
