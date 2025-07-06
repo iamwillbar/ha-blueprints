@@ -352,15 +352,15 @@ action:
                       entity_id: !input temperature_sensor
                       above: !input max_temperature
                   sequence:
-                    - delay: !input repeat_interval
+                    - delay: !input reminder_interval
                     - if:
                         - condition: numeric_state
                           entity_id: !input temperature_sensor
                           above: !input max_temperature
                       then:
-                        - service: !input notification_service
+                        - service: "{{ notification_service }}"
                           data:
-                            title: "� {{ high_temp_alert_title_template.replace('{location}', location) }}"
+                            title: "{{ reminder_title }}"
                             message: >
                               {{ high_temp_reminder_message_template.replace('{location}', location).replace('{current_temp}', states(sensor_name) | string).replace('{temp_unit}', temp_unit).replace('{duration}', relative_time(trigger.from_state.last_changed)) }}
       
