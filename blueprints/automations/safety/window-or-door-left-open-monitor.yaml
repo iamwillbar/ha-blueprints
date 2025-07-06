@@ -83,7 +83,7 @@ blueprint:
         max_reminder_count:
           name: "Maximum Reminder Count"
           description: "Maximum number of reminder notifications (0 = unlimited)"
-          default: 3
+          default: 0
           selector:
             number:
               min: 0
