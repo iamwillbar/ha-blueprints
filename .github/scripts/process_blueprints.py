@@ -28,47 +28,47 @@ def get_git_commits_for_file(filepath):
 
 def calculate_semver(commits, filepath):
     """Calculate semantic version based on commit messages"""
-    major, minor, patch = 1, 0, 0
+    # Start with version 1.0.0
+    major = 1
+    minor = 0
+    patch = 0
     
-    for commit in commits:
+    # If no commits, return initial version
+    if not commits or len([c for c in commits if c.strip()]) == 0:
+        return '1.0.0'
+    
+    # Process commits from oldest to newest (reverse the list)
+    is_first_commit = True
+    for commit in reversed(commits):
         if not commit.strip():
+            continue
+        
+        # Skip incrementing for the first commit - it establishes the base version 1.0.0
+        if is_first_commit:
+            is_first_commit = False
             continue
         
         commit_msg = commit.split(' ', 1)[1] if ' ' in commit else commit
         commit_lower = commit_msg.lower()
         
         # Major version indicators
-        if any(keyword in commit_lower for keyword in [
-            'breaking change', 'breaking:', 'major:', '!:', 'incompatible'
-        ]):
+        major_keywords = ['breaking change', 'breaking:', 'major:', '!:', 'incompatible']
+        minor_keywords = ['feat:', 'feature:', 'add:', 'new:', 'minor:', 'enhancement']
+        
+        if any(keyword in commit_lower for keyword in major_keywords):
+            # Major: increment major, reset minor and patch to 0
             major += 1
             minor = 0
             patch = 0
-        # Minor version indicators  
-        elif any(keyword in commit_lower for keyword in [
-            'feat:', 'feature:', 'add:', 'new:', 'minor:', 'enhancement'
-        ]):
+        elif any(keyword in commit_lower for keyword in minor_keywords):
+            # Minor: increment minor, reset patch to 0
             minor += 1
             patch = 0
-        # Patch version indicators
-        elif any(keyword in commit_lower for keyword in [
-            'fix:', 'patch:', 'bug:', 'hotfix:', 'chore:', 'docs:', 'style:'
-        ]):
+        else:
+            # All other commits (including patch keywords and unmatched): increment patch
             patch += 1
     
-    # If no conventional commits found, base version on commit count
-    if major == 1 and minor == 0 and patch == 0:
-        commit_count = len([c for c in commits if c.strip()])
-        if commit_count == 0:
-            return '1.0.0'
-        elif commit_count < 5:
-            return f'1.0.{commit_count}'
-        else:
-            minor_count = commit_count // 5
-            patch_count = commit_count % 5
-            return f'1.{minor_count}.{patch_count}'
-    
-    return f'{major}.{minor}.{patch}'
+    return f"{major}.{minor}.{patch}"
 
 
 def process_blueprints():
