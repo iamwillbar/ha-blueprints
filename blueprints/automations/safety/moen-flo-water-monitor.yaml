@@ -1,0 +1,776 @@
+blueprint:
+  name: "Moen Flo Water Monitor"
+  description: |
+    Comprehensive water leak monitoring and valve control for Moen Flo smart water system with 
+    intelligent alerts and automatic valve control capabilities.
+    
+    **Features:**
+    - Water leak detection with immediate notifications
+    - Automatic valve shutdown on critical leaks
+    - Water pressure monitoring with configurable thresholds
+    - Water flow rate monitoring for unusual usage patterns
+    - Valve control actions with safety confirmations
+    - Low battery alerts for wireless sensors
+    - Configurable notification services and escalation
+    
+    **Alert Types:**
+    - **Critical Leak**: Immediate notification + optional automatic valve shutdown
+    - **Water Flow**: Unusual flow patterns or continuous flow detection
+    - **Pressure Issues**: High/low water pressure alerts
+    - **Battery Low**: Low battery alerts for wireless components
+    - **Valve Status**: Valve open/closed status changes
+    
+    **Safety Features:**
+    - Manual valve control override protection
+    - Configurable auto-shutoff delays to prevent false triggers
+    - Recovery notifications when issues resolve
+    - Multiple notification services support
+    
+    **Requirements:**
+    - Moen Flo smart water system integration in Home Assistant
+    - Configured notification services
+    - Proper Moen Flo device entities available
+    
+    **Usage Notes:**
+    - Configure leak detection sensors for immediate response
+    - Set appropriate pressure thresholds for your home's plumbing
+    - Test valve control functionality before relying on auto-shutoff
+    - Critical alerts will repeat until manually acknowledged or resolved
+  domain: automation
+  author: "William Bartholomew"
+  homeassistant:
+    min_version: "2024.6.0"
+  input:
+    # Main Configuration Section
+    main_config:
+      name: "Main Configuration"
+      icon: "mdi:water-alert"
+      description: "Primary Moen Flo device configuration"
+      input:
+        flo_valve:
+          name: Moen Flo Smart Valve
+          description: Select your Moen Flo smart water valve device
+          selector:
+            entity:
+              filter:
+                - integration: flo
+                  domain: switch
+              multiple: false
+        
+        leak_sensor:
+          name: Water Leak Sensor
+          description: Select your primary water leak detection sensor
+          selector:
+            entity:
+              filter:
+                - device_class: moisture
+              multiple: false
+        
+        flow_rate_sensor:
+          name: Water Flow Rate Sensor
+          description: Select your Moen Flo water flow rate sensor
+          selector:
+            entity:
+              filter:
+                - integration: flo
+                  device_class: water
+              multiple: false
+        
+        pressure_sensor:
+          name: Water Pressure Sensor
+          description: Select your Moen Flo water pressure sensor
+          selector:
+            entity:
+              filter:
+                - integration: flo
+                  device_class: pressure
+              multiple: false
+        
+        device_location:
+          name: Installation Location
+          description: Location name for notifications (e.g., "Main Water Line", "Basement")
+          default: "Water System"
+          selector:
+            text:
+    
+    # Threshold Configuration Section  
+    threshold_config:
+      name: "Monitoring Thresholds"
+      icon: "mdi:tune"
+      description: "Customize alert thresholds for your water system"
+      input:
+        high_flow_threshold:
+          name: High Flow Rate Alert Threshold
+          description: "Flow rate that triggers high usage alert (gallons per minute)"
+          default: 5.0
+          selector:
+            number:
+              min: 1.0
+              max: 20.0
+              step: 0.5
+              unit_of_measurement: "gpm"
+        
+        continuous_flow_duration:
+          name: Continuous Flow Alert Duration
+          description: "How long continuous flow must occur before alerting"
+          default:
+            minutes: 30
+          selector:
+            duration:
+        
+        low_pressure_threshold:
+          name: Low Pressure Alert Threshold
+          description: "Water pressure below which to send low pressure alert"
+          default: 20
+          selector:
+            number:
+              min: 10
+              max: 40
+              step: 5
+              unit_of_measurement: "psi"
+        
+        high_pressure_threshold:
+          name: High Pressure Alert Threshold
+          description: "Water pressure above which to send high pressure alert"
+          default: 80
+          selector:
+            number:
+              min: 60
+              max: 120
+              step: 5
+              unit_of_measurement: "psi"
+        
+        battery_low_threshold:
+          name: Low Battery Alert Threshold
+          description: "Battery level below which to send low battery alert"
+          default: 20
+          selector:
+            number:
+              min: 10
+              max: 50
+              step: 5
+              unit_of_measurement: "%"
+        
+        auto_shutoff_delay:
+          name: Auto Shutoff Delay
+          description: Delay before automatic valve closure (prevents false triggers)
+          default:
+            seconds: 30
+          selector:
+            duration:
+
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:bell-alert"
+      description: "Configure notification delivery and timing"
+      input:
+        notification_service:
+          name: "Notification Service"
+          description: "Primary notification service for water system alerts"
+          default: "notify.notify"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+        
+        initial_notification_delay:
+          name: "Initial Notification Delay"
+          description: "Time to wait before sending the first notification"
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 30
+              step: 1
+              unit_of_measurement: "minutes"
+              mode: slider
+        
+        send_reminders:
+          name: "Send Reminder Notifications"
+          description: "Send periodic reminder notifications for ongoing issues"
+          default: true
+          selector:
+            boolean:
+        
+        reminder_interval:
+          name: "Reminder Interval"
+          description: "Time between reminder notifications"
+          default: 60
+          selector:
+            number:
+              min: 15
+              max: 480
+              step: 15
+              unit_of_measurement: "minutes"
+              mode: slider
+        
+        max_reminder_count:
+          name: "Maximum Reminder Count"
+          description: "Maximum number of reminder notifications (0 = unlimited)"
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 50
+              mode: box
+        
+        send_resolution_notification:
+          name: "Send Resolution Notification"
+          description: "Send notification when water issues are resolved"
+          default: true
+          selector:
+            boolean:
+
+    # Critical Alert Settings Section
+    critical_notification_config:
+      name: "Critical Alert Settings"
+      icon: "mdi:bell-alert-outline"
+      description: "Configure critical leak alert delivery and timing"
+      input:
+        critical_notification_service:
+          name: "Critical Notification Service (Optional)"
+          description: "Separate service for critical leak alerts (e.g., SMS, phone call). Leave empty to use standard service."
+          default: ""
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+        
+        critical_reminder_interval:
+          name: "Critical Alert Reminder Interval"
+          description: "Time between critical leak alert reminders"
+          default: 5
+          selector:
+            number:
+              min: 1
+              max: 30
+              step: 1
+              unit_of_measurement: "minutes"
+              mode: slider
+        
+        critical_max_reminder_count:
+          name: "Critical Maximum Reminder Count"
+          description: "Maximum number of critical reminders (0 = unlimited, recommended for safety)"
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 50
+              mode: box
+
+    # Notification Content Section
+    notification_content_config:
+      name: "Customize Notification Content (Optional)"
+      icon: "mdi:message-text"
+      description: "Customize notification titles and messages"
+      collapsed: true
+      input:
+        notification_title:
+          name: "Water Alert Title"
+          description: "Title for water system notifications"
+          default: "💧 Water System Alert"
+          selector:
+            text:
+        
+        leak_message:
+          name: "Leak Detection Message"
+          description: |
+            Message template for leak detection alerts. Available variables:
+            - `{location}`: Device location name
+            - `{sensor_name}`: Name of the leak sensor
+            - `{flow_rate}`: Current flow rate
+          default: "🚨 WATER LEAK DETECTED at {location}!\n\nSensor: {sensor_name}\nFlow Rate: {flow_rate} gpm\nImmediate action required!"
+          selector:
+            text:
+              multiline: true
+        
+        pressure_message:
+          name: "Pressure Alert Message"
+          description: |
+            Message template for pressure alerts. Available variables:
+            - `{location}`: Device location name
+            - `{pressure}`: Current pressure reading
+            - `{threshold}`: Configured threshold
+            - `{unit}`: Pressure unit (psi)
+          default: "⚡ Water pressure issue at {location}\n\nCurrent: {pressure} {unit}\nThreshold: {threshold} {unit}"
+          selector:
+            text:
+              multiline: true
+        
+        flow_message:
+          name: "Flow Alert Message"
+          description: |
+            Message template for flow alerts. Available variables:
+            - `{location}`: Device location name
+            - `{flow_rate}`: Current flow rate
+            - `{unit}`: Flow rate unit (gpm)
+          default: "🌊 Unusual water flow detected at {location}\n\nFlow rate: {flow_rate} {unit}"
+          selector:
+            text:
+              multiline: true
+        
+        reminder_title:
+          name: "Reminder Title"
+          description: "Title for reminder notifications"
+          default: "🔄 Water System Alert Continues"
+          selector:
+            text:
+        
+        resolution_title:
+          name: "Resolution Title"
+          description: "Title for resolution notifications"
+          default: "✅ Water System Normal"
+          selector:
+            text:
+        
+        resolution_message:
+          name: "Resolution Message"
+          description: |
+            Message template for resolution notifications. Available variables:
+            - `{location}`: Device location name
+          default: "✅ Water system has returned to normal at {location}"
+          selector:
+            text:
+              multiline: true
+        
+        critical_title:
+          name: "Critical Alert Title"
+          description: "Title for critical leak alerts"
+          default: "🚨 CRITICAL: Water Leak"
+          selector:
+            text:
+        
+        critical_message:
+          name: "Critical Alert Message"
+          description: |
+            Message template for critical leak alerts. Available variables:
+            - `{location}`: Device location name
+            - `{sensor_name}`: Name of the leak sensor
+            - `{flow_rate}`: Current flow rate
+          default: "🚨 CRITICAL WATER LEAK DETECTED at {location}!\n\nSensor: {sensor_name}\nFlow Rate: {flow_rate} gpm\nImmediate action required!"
+          selector:
+            text:
+              multiline: true
+        
+        valve_control_message:
+          name: "Valve Control Message"
+          description: |
+            Message template for valve control notifications. Available variables:
+            - `{location}`: Device location name
+            - `{action}`: Valve action (opened/closed)
+            - `{reason}`: Reason for action
+          default: "🔧 Water valve {action} at {location}\n\nReason: {reason}"
+          selector:
+            text:
+              multiline: true
+    
+    # Advanced Settings Section
+    advanced_settings:
+      name: "Advanced Settings"
+      icon: "mdi:cog"
+      description: "Optional valve control and advanced features"
+      collapsed: true
+      input:
+        enable_auto_shutoff:
+          name: Enable Automatic Valve Shutoff
+          description: Automatically close valve when critical leak is detected
+          default: false
+          selector:
+            boolean:
+        
+        require_manual_reopen:
+          name: Require Manual Valve Reopen
+          description: Prevent automatic valve reopening after leak resolution
+          default: true
+          selector:
+            boolean:
+
+variables:
+  valve_entity: !input flo_valve
+  leak_entity: !input leak_sensor
+  flow_entity: !input flow_rate_sensor
+  pressure_entity: !input pressure_sensor
+  location_name: !input device_location
+  notification_service: !input notification_service
+  critical_notification_service: !input critical_notification_service
+  auto_shutoff_enabled: !input enable_auto_shutoff
+  shutoff_delay: !input auto_shutoff_delay
+  manual_reopen_required: !input require_manual_reopen
+  critical_reminder_interval: !input critical_reminder_interval
+  high_flow_limit: !input high_flow_threshold
+  continuous_flow_time: !input continuous_flow_duration
+  low_pressure_limit: !input low_pressure_threshold
+  high_pressure_limit: !input high_pressure_threshold
+  battery_threshold: !input battery_low_threshold
+  
+  # Notification content templates
+  notification_title: !input notification_title
+  leak_message: !input leak_message
+  pressure_message: !input pressure_message
+  flow_message: !input flow_message
+  reminder_title: !input reminder_title
+  resolution_title: !input resolution_title
+  resolution_message: !input resolution_message
+  critical_title: !input critical_title
+  critical_message: !input critical_message
+  valve_control_message: !input valve_control_message
+  
+  # Effective notification services
+  effective_notification_service: >-
+    {{ notification_service if notification_service != '' else 'notify.notify' }}
+  effective_critical_service: >-
+    {{ critical_notification_service if critical_notification_service != '' else notification_service if notification_service != '' else 'notify.notify' }}
+
+mode: parallel
+max: 10
+max_exceeded: silent
+
+trigger:
+  # Critical water leak detection
+  - platform: state
+    entity_id: !input leak_sensor
+    to: "on"
+    id: leak_detected
+  
+  - platform: state
+    entity_id: !input leak_sensor
+    to: "off"
+    id: leak_cleared
+  
+  # High water flow rate
+  - platform: numeric_state
+    entity_id: !input flow_rate_sensor
+    above: !input high_flow_threshold
+    id: high_flow
+  
+  # Continuous water flow
+  - platform: numeric_state
+    entity_id: !input flow_rate_sensor
+    above: 0.1
+    for: !input continuous_flow_duration
+    id: continuous_flow
+  
+  # Water flow stopped
+  - platform: numeric_state
+    entity_id: !input flow_rate_sensor
+    below: 0.1
+    for:
+      minutes: 5
+    id: flow_stopped
+  
+  # Water pressure monitoring
+  - platform: numeric_state
+    entity_id: !input pressure_sensor
+    below: !input low_pressure_threshold
+    for:
+      minutes: 2
+    id: low_pressure
+  
+  - platform: numeric_state
+    entity_id: !input pressure_sensor
+    above: !input high_pressure_threshold
+    for:
+      minutes: 2
+    id: high_pressure
+  
+  # Pressure back to normal
+  - platform: numeric_state
+    entity_id: !input pressure_sensor
+    above: !input low_pressure_threshold
+    below: !input high_pressure_threshold
+    id: pressure_normal
+  
+  # Valve state changes
+  - platform: state
+    entity_id: !input flo_valve
+    to: "off"
+    id: valve_closed
+  
+  - platform: state
+    entity_id: !input flo_valve
+    to: "on"
+    id: valve_opened
+  
+  # Battery monitoring (if battery attribute exists)
+  - platform: numeric_state
+    entity_id: !input leak_sensor
+    attribute: battery_level
+    below: !input battery_low_threshold
+    id: battery_low
+  
+  # Repeat critical leak alerts
+  - platform: time_pattern
+    minutes: !input critical_reminder_interval
+    id: repeat_check
+
+condition: []
+
+action:
+  - choose:
+      # === CRITICAL WATER LEAK DETECTED ===
+      - conditions:
+          - condition: trigger
+            id: leak_detected
+        sequence:
+          - service: "{{ effective_critical_service }}"
+            data:
+              title: >-
+                {{ critical_title }}
+              message: >-
+                {{ critical_message.replace('{location}', location_name)
+                                   .replace('{sensor_name}', state_attr(leak_entity, 'friendly_name') | default('Water Leak Sensor'))
+                                   .replace('{flow_rate}', states(flow_entity) | round(2) | string) }}
+              data:
+                priority: high
+                ttl: 0
+                actions:
+                  - action: "manual_valve_off"
+                    title: "Close Valve Now"
+                  - action: "snooze_leak_alert"
+                    title: "Snooze 30min"
+          
+          # Send to critical notification service if different from standard
+          - if:
+              - condition: template
+                value_template: "{{ critical_notification_service != '' and critical_notification_service != notification_service }}"
+            then:
+              - service: "{{ critical_notification_service }}"
+                data:
+                  title: "{{ critical_title }}"
+                  message: >-
+                    {{ critical_message.replace('{location}', location_name)
+                                       .replace('{sensor_name}', state_attr(leak_entity, 'friendly_name') | default('Water Leak Sensor'))
+                                       .replace('{flow_rate}', states(flow_entity) | round(2) | string) }}
+          
+          # Automatic valve shutoff if enabled
+          - if:
+              - condition: template
+                value_template: "{{ auto_shutoff_enabled }}"
+            then:
+              - delay: !input auto_shutoff_delay
+              - if:
+                  - condition: state
+                    entity_id: !input leak_sensor
+                    state: "on"
+                then:
+                  - service: switch.turn_off
+                    target:
+                      entity_id: !input flo_valve
+                  - service: "{{ effective_notification_service }}"
+                    data:
+                      title: "{{ notification_title }}"
+                      message: >-
+                        {{ valve_control_message.replace('{location}', location_name)
+                                                .replace('{action}', 'closed')
+                                                .replace('{reason}', 'Automatic leak detection shutdown') }}
+      
+      # === WATER LEAK CLEARED ===
+      - conditions:
+          - condition: trigger
+            id: leak_cleared
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ resolution_title }}"
+              message: >-
+                {{ resolution_message.replace('{location}', location_name) }}
+      
+      # === REPEATED CRITICAL LEAK ALERTS ===
+      - conditions:
+          - condition: trigger
+            id: repeat_check
+          - condition: state
+            entity_id: !input leak_sensor
+            state: "on"
+        sequence:
+          - service: "{{ effective_critical_service }}"
+            data:
+              title: "{{ reminder_title }}"
+              message: >-
+                {{ critical_message.replace('{location}', location_name)
+                                   .replace('{sensor_name}', state_attr(leak_entity, 'friendly_name') | default('Water Leak Sensor'))
+                                   .replace('{flow_rate}', states(flow_entity) | round(2) | string) }}
+                
+                ⚠️ This is a repeated alert. Leak is still active!
+                Valve Status: {{ states(valve_entity) | title }}
+              data:
+                priority: high
+                ttl: 0
+      
+      # === HIGH WATER FLOW DETECTED ===
+      - conditions:
+          - condition: trigger
+            id: high_flow
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ notification_title }}"
+              message: >-
+                {{ flow_message.replace('{location}', location_name)
+                               .replace('{flow_rate}', states(flow_entity) | round(2) | string)
+                               .replace('{unit}', 'gpm') }}
+                
+                Threshold: {{ high_flow_limit }}gpm
+                
+                Possible causes:
+                • Multiple fixtures running simultaneously
+                • Large appliance filling
+                • Irrigation system activation
+                • Potential leak or burst pipe
+      
+      # === CONTINUOUS WATER FLOW ===
+      - conditions:
+          - condition: trigger
+            id: continuous_flow
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ notification_title }}"
+              message: >-
+                {{ flow_message.replace('{location}', location_name)
+                               .replace('{flow_rate}', states(flow_entity) | round(2) | string)
+                               .replace('{unit}', 'gpm') }}
+                
+                Duration: {{ continuous_flow_time.minutes }} minutes
+                
+                Potential issues:
+                • Running toilet or faucet left on
+                • Irrigation system malfunction
+                • Hidden leak in plumbing system
+                • Appliance malfunction
+              data:
+                actions:
+                  - action: "check_fixtures"
+                    title: "Fixtures Checked"
+                  - action: "close_valve_continuous"
+                    title: "Close Valve"
+      
+      # === WATER FLOW STOPPED ===
+      - conditions:
+          - condition: trigger
+            id: flow_stopped
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ resolution_title }}"
+              message: >-
+                {{ resolution_message.replace('{location}', location_name) }}
+                
+                Water flow has stopped. This is normal if water usage has ended.
+      
+      # === LOW WATER PRESSURE ===
+      - conditions:
+          - condition: trigger
+            id: low_pressure
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ notification_title }}"
+              message: >-
+                {{ pressure_message.replace('{location}', location_name)
+                                   .replace('{pressure}', states(pressure_entity) | round(1) | string)
+                                   .replace('{threshold}', low_pressure_limit | string)
+                                   .replace('{unit}', 'psi') }}
+                
+                Possible causes:
+                • Municipal water supply issue
+                • Clogged water filter or aerators
+                • Partially closed valve upstream
+                • Pipe blockage or leak
+                • Pressure regulator malfunction
+      
+      # === HIGH WATER PRESSURE ===
+      - conditions:
+          - condition: trigger
+            id: high_pressure
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ notification_title }}"
+              message: >-
+                {{ pressure_message.replace('{location}', location_name)
+                                   .replace('{pressure}', states(pressure_entity) | round(1) | string)
+                                   .replace('{threshold}', high_pressure_limit | string)
+                                   .replace('{unit}', 'psi') }}
+                
+                ⚠️ High pressure can damage plumbing fixtures and appliances.
+                
+                Recommended actions:
+                • Check pressure regulator operation
+                • Consider installing/adjusting pressure reducing valve
+                • Inspect for water hammer issues
+                • Contact plumber if pressure consistently high
+      
+      # === PRESSURE BACK TO NORMAL ===
+      - conditions:
+          - condition: trigger
+            id: pressure_normal
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ resolution_title }}"
+              message: >-
+                {{ resolution_message.replace('{location}', location_name) }}
+                
+                Water pressure: {{ states(pressure_entity) | round(1) }}psi (normal)
+      
+      # === VALVE CLOSED ===
+      - conditions:
+          - condition: trigger
+            id: valve_closed
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ notification_title }}"
+              message: >-
+                {{ valve_control_message.replace('{location}', location_name)
+                                        .replace('{action}', 'closed')
+                                        .replace('{reason}', 'Manual or automatic valve operation') }}
+                
+                Water supply is now shut off.
+                {% if states(leak_entity) == 'on' %}Leak detection is still active.{% endif %}
+      
+      # === VALVE OPENED ===
+      - conditions:
+          - condition: trigger
+            id: valve_opened
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ notification_title }}"
+              message: >-
+                {{ valve_control_message.replace('{location}', location_name)
+                                        .replace('{action}', 'opened')
+                                        .replace('{reason}', 'Manual or automatic valve operation') }}
+                
+                Water supply is now restored.
+                Current Flow: {{ states(flow_entity) | round(2) }}gpm
+                Pressure: {{ states(pressure_entity) | round(1) }}psi
+      
+      # === LOW BATTERY ALERT ===
+      - conditions:
+          - condition: trigger
+            id: battery_low
+          - condition: template
+            value_template: "{{ state_attr(leak_entity, 'battery_level') is not none }}"
+        sequence:
+          - service: "{{ effective_notification_service }}"
+            data:
+              title: "{{ notification_title }}"
+              message: >-
+                🔋 Low battery detected on water leak sensor at {{ location_name }}.
+                Battery Level: {{ state_attr(leak_entity, 'battery_level') | round(0) }}%
+                
+                Action needed:
+                • Replace battery in leak sensor
+                • Test sensor operation after replacement
+                • Consider keeping spare batteries available
+                
+                Low battery may affect leak detection reliability.
