@@ -47,6 +47,7 @@ blueprint:
       name: "Threshold Configuration"
       icon: "mdi:tune"
       description: "Customize timing and alert thresholds"
+      collapsed: true
       input:
         initial_delay:
           name: "Initial Delay"
@@ -73,8 +74,8 @@ blueprint:
     # Notification Settings Section
     notification_config:
       name: "Notification Settings"
-      icon: "mdi:message-alert"
-      description: "Configure notification delivery and content"
+      icon: "mdi:bell-alert"
+      description: "Configure notification delivery and behavior"
       input:
         notification_service:
           name: "Notification Service"
@@ -88,27 +89,13 @@ blueprint:
                 - "notify.mobile_app"
                 - "notify.persistent_notification"
         
-        notification_title:
-          name: "Notification Title"
-          description: "Title for the notifications"
-          default: "🚪 Door/Window Alert"
-          selector:
-            text:
-        
         send_resolution_notification:
           name: "Send Resolution Notification"
           description: "Send a notification when the door/window is finally closed"
           default: true
           selector:
             boolean:
-    
-    # Advanced Settings Section
-    advanced_settings:
-      name: "Advanced Settings"
-      icon: "mdi:cog"
-      description: "Optional settings for customizing notification messages"
-      collapsed: true
-      input:
+        
         max_reminders:
           name: "Maximum Reminders"
           description: "Maximum number of reminder notifications (0 = unlimited)"
@@ -118,6 +105,20 @@ blueprint:
               min: 0
               max: 20
               mode: box
+
+    # Notification Content Section
+    notification_content_config:
+      name: "Notification Content"
+      icon: "mdi:message-text"
+      description: "Customize notification titles and messages"
+      collapsed: true
+      input:
+        notification_title:
+          name: "Notification Title"
+          description: "Title for the notifications"
+          default: "🚪 Door/Window Alert"
+          selector:
+            text:
         
         initial_message:
           name: "Initial Notification Message"

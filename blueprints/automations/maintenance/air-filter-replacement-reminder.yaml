@@ -51,31 +51,6 @@ blueprint:
           selector:
             text:
     
-    # Notification Settings Section
-    notification_config:
-      name: "Notification Settings"
-      icon: "mdi:bell-alert"
-      description: "Configure notification delivery and behavior"
-      input:
-        notification_service:
-          name: "Notification Service"
-          description: "Select the notification service to send alerts to"
-          default: "notify.persistent_notification"
-          selector:
-            select:
-              custom_value: true
-              options:
-                - "notify.persistent_notification"
-                - "notify.mobile_app"
-                - "notify.notify"
-        
-        include_percentage:
-          name: "Include Remaining Life Percentage"
-          description: "Include the exact percentage of remaining filter life in notifications"
-          default: true
-          selector:
-            boolean:
-
     # Threshold Configuration Section
     threshold_config:
       name: "Threshold Configuration"
@@ -94,12 +69,30 @@ blueprint:
               step: 5
               unit_of_measurement: "%"
               mode: slider
-    
-    # Advanced Settings Section (collapsed by default)
-    advanced_settings:
-      name: "Advanced Settings"
-      icon: "mdi:tune"
-      description: "Optional advanced configuration for notification behavior"
+
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:bell-alert"
+      description: "Configure notification delivery and behavior"
+      input:
+        notification_service:
+          name: "Notification Service"
+          description: "Select the notification service to send alerts to"
+          default: "notify.persistent_notification"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+
+    # Notification Content Section
+    notification_content_config:
+      name: "Notification Content"
+      icon: "mdi:message-text"
+      description: "Customize notification titles and messages"
       collapsed: true
       input:
         notification_title:
@@ -117,7 +110,7 @@ blueprint:
             - {location}: Location prefix
             - {percentage}: Remaining life percentage
             - {friendly_name}: Friendly name of the sensor
-          default: ""
+          default: "{location} \"{friendly_name}\" needs replacement ({percentage}% remaining)"
           selector:
             text:
               multiline: true
@@ -127,7 +120,6 @@ variables:
   replace_threshold: !input filter_replace_threshold
   location_prefix: !input location_prefix
   notification_service: !input notification_service
-  include_percentage: !input include_percentage
   notification_title: !input notification_title
   custom_message: !input custom_message
 
@@ -154,19 +146,10 @@ action:
             data:
               title: "{{ notification_title }}"
               message: >-
-                {% if custom_message != "" %}
-                  {{ custom_message.replace('{filter_name}', trigger.to_state.entity_id)
-                                   .replace('{location}', location_prefix)
-                                   .replace('{percentage}', trigger.to_state.state)
-                                   .replace('{friendly_name}', trigger.to_state.attributes.friendly_name or trigger.to_state.entity_id) }}
-                {% else %}
-                  {% set filter_name = trigger.to_state.attributes.friendly_name or trigger.to_state.entity_id %}
-                  {% if include_percentage %}
-                    {{ location_prefix }} "{{ filter_name }}" needs replacement ({{ trigger.to_state.state }}% remaining)
-                  {% else %}
-                    {{ location_prefix }} "{{ filter_name }}" needs replacement
-                  {% endif %}
-                {% endif %}
+                {{ custom_message.replace('{filter_name}', trigger.to_state.entity_id)
+                                 .replace('{location}', location_prefix)
+                                 .replace('{percentage}', trigger.to_state.state)
+                                 .replace('{friendly_name}', trigger.to_state.attributes.friendly_name or trigger.to_state.entity_id) }}
               data:
                 tag: "air_filter_{{ trigger.to_state.entity_id | replace('.', '_') }}"
       

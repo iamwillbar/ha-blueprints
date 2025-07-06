@@ -85,94 +85,6 @@ blueprint:
           selector:
             text:
     
-    # Notification Settings Section
-    notification_config:
-      name: "Notification Settings"
-      icon: "mdi:bell-alert"
-      description: "Configure notification delivery and timing"
-      input:
-        notification_service:
-          name: Notification Service
-          description: The notification service to use for alerts
-          selector:
-            target:
-          default: {}
-        
-        critical_alert_interval:
-          name: Critical Alert Repeat Interval
-          description: How often to repeat critical CO alerts
-          default: 5
-          selector:
-            number:
-              min: 1
-              max: 15
-              step: 1
-              unit_of_measurement: "minutes"
-        
-        enable_debug_mode:
-          name: Enable Debug Mode
-          description: Enable debug mode to log air quality readings
-          default: false
-          selector:
-            boolean:
-    
-    # Optional MiCS Gas Sensors Section
-    optional_sensors:
-      name: "Optional MiCS Gas Sensors"
-      icon: "mdi:molecule"
-      description: "Configure additional gas sensors if MiCS-4514 add-on is installed"
-      collapsed: true
-      input:
-        ammonia_sensor:
-          name: Ammonia Sensor
-          description: Select ammonia sensor if you have the MiCS-4514 add-on
-          default: ""
-          selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
-        
-        ethanol_sensor:
-          name: Ethanol Sensor
-          description: Select ethanol sensor if you have the MiCS-4514 add-on
-          default: ""
-          selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
-        
-        methane_sensor:
-          name: Methane Sensor
-          description: Select methane sensor if you have the MiCS-4514 add-on
-          default: ""
-          selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
-        
-        hydrogen_sensor:
-          name: Hydrogen Sensor
-          description: Select hydrogen sensor if you have the MiCS-4514 add-on
-          default: ""
-          selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
-        
-        nitrogen_dioxide_sensor:
-          name: Nitrogen Dioxide Sensor
-          description: Select nitrogen dioxide sensor if you have the MiCS-4514 add-on
-          default: ""
-          selector:
-            entity:
-              filter:
-                - integration: esphome
-              multiple: false
-    
     # Threshold Configuration Section
     threshold_config:
       name: "Threshold Configuration"
@@ -332,6 +244,99 @@ blueprint:
               step: 0.1
               unit_of_measurement: "ppm"
 
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:bell-alert"
+      description: "Configure notification delivery and timing"
+      input:
+        notification_service:
+          name: "Notification Service"
+          description: "Select the notification service to use for alerts"
+          default: "notify.notify"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+        
+        critical_alert_interval:
+          name: "Critical Alert Repeat Interval"
+          description: "How often to repeat critical CO alerts"
+          default: 5
+          selector:
+            number:
+              min: 1
+              max: 15
+              step: 1
+              unit_of_measurement: "minutes"
+        
+        enable_debug_mode:
+          name: "Enable Debug Mode"
+          description: "Enable debug mode to log air quality readings"
+          default: false
+          selector:
+            boolean:
+    
+    # Optional MiCS Gas Sensors Section
+    advanced_settings:
+      name: "Optional MiCS Gas Sensors"
+      icon: "mdi:cog"
+      description: "Configure additional gas sensors if MiCS-4514 add-on is installed"
+      collapsed: true
+      input:
+        ammonia_sensor:
+          name: Ammonia Sensor
+          description: Select ammonia sensor if you have the MiCS-4514 add-on
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+        
+        ethanol_sensor:
+          name: Ethanol Sensor
+          description: Select ethanol sensor if you have the MiCS-4514 add-on
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+        
+        methane_sensor:
+          name: Methane Sensor
+          description: Select methane sensor if you have the MiCS-4514 add-on
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+        
+        hydrogen_sensor:
+          name: Hydrogen Sensor
+          description: Select hydrogen sensor if you have the MiCS-4314 add-on
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+        
+        nitrogen_dioxide_sensor:
+          name: Nitrogen Dioxide Sensor
+          description: Select nitrogen dioxide sensor if you have the MiCS-4514 add-on
+          default: ""
+          selector:
+            entity:
+              filter:
+                - integration: esphome
+              multiple: false
+
 variables:
   co2_entity: !input co2_sensor
   co_entity: !input co_sensor
@@ -342,7 +347,7 @@ variables:
   methane_entity: !input methane_sensor
   hydrogen_entity: !input hydrogen_sensor
   nitrogen_dioxide_entity: !input nitrogen_dioxide_sensor
-  notification_target: !input notification_service
+  notification_service: !input notification_service
   device_area: !input device_location
   co2_limit: !input co2_threshold
   co2_clear: !input co2_clear_threshold
@@ -457,7 +462,7 @@ action:
           - condition: trigger
             id: co_critical
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: "{{ notification_service }}"
             data:
               title: "🚨 CRITICAL: Carbon Monoxide Detected!"
               message: >-
@@ -482,7 +487,7 @@ action:
           - condition: trigger
             id: co_warning  
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: "{{ notification_service }}"
             data:
               title: "⚠️ WARNING: Carbon Monoxide Detected"
               message: >-
@@ -504,7 +509,7 @@ action:
           - condition: trigger
             id: co_normal
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: "{{ notification_service }}"
             data:
               title: "✅ Carbon Monoxide Levels Normal"
               message: >-
@@ -521,7 +526,7 @@ action:
           - condition: template
             value_template: "{{ states(co_entity) | float(0) >= co_critical_limit }}"
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: "{{ notification_service }}"
             data:
               title: "🚨 CRITICAL CO ALERT - ONGOING!"
               message: >-
@@ -547,7 +552,7 @@ action:
           - condition: trigger
             id: co2_high
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: "{{ notification_service }}"
             data:
               title: "💨 High CO2 Levels Detected"
               message: >-
@@ -567,7 +572,7 @@ action:
           - condition: trigger
             id: co2_normal
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: "{{ notification_service }}"
             data:
               title: "✅ CO2 Levels Improved"
               message: >-
@@ -580,7 +585,7 @@ action:
           - condition: trigger
             id: pm25_high
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "🌫️ High Particulate Matter (PM2.5)"
               message: >-
@@ -600,7 +605,7 @@ action:
           - condition: trigger
             id: pm25_normal
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "✅ PM2.5 Levels Improved"
               message: >-
@@ -611,7 +616,7 @@ action:
           - condition: trigger
             id: voc_high
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "🧪 High Volatile Organic Compounds"
               message: >-
@@ -636,7 +641,7 @@ action:
           - condition: trigger
             id: voc_normal
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "✅ VOC Levels Normal"
               message: >-
@@ -650,7 +655,7 @@ action:
           - condition: template
             value_template: "{{ ammonia_entity != '' and ammonia_entity != 'unavailable' }}"
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "⚠️ High Ammonia Detected"
               message: >-
@@ -671,7 +676,7 @@ action:
           - condition: template
             value_template: "{{ ethanol_entity != '' and ethanol_entity != 'unavailable' }}"
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "🍷 High Ethanol Detected"  
               message: >-
@@ -692,7 +697,7 @@ action:
           - condition: template
             value_template: "{{ methane_entity != '' and methane_entity != 'unavailable' }}"
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "⚠️ Methane Detected"
               message: >-
@@ -714,7 +719,7 @@ action:
           - condition: template
             value_template: "{{ hydrogen_entity != '' and hydrogen_entity != 'unavailable' }}"
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "⚠️ High Hydrogen Detected"
               message: >-
@@ -734,7 +739,7 @@ action:
           - condition: template
             value_template: "{{ nitrogen_dioxide_entity != '' and nitrogen_dioxide_entity != 'unavailable' }}"
         sequence:
-          - service: notify.{{ notification_target.service | default('notify') }}
+          - service: {{ notification_service }}
             data:
               title: "⚠️ High Nitrogen Dioxide Detected"
               message: >-

@@ -64,8 +64,9 @@ blueprint:
     # Threshold Configuration Section
     threshold_config:
       name: "Threshold Configuration"
-      icon: "mdi:timer"
+      icon: "mdi:tune"
       description: "Configure when the door should be automatically locked"
+      collapsed: true
       input:
         lock_delay:
           name: "Lock Delay"
@@ -92,11 +93,11 @@ blueprint:
     # Notification Settings Section
     notification_config:
       name: "Notification Settings"
-      icon: "mdi:message-lock"
+      icon: "mdi:bell-alert"
       description: "Configure notification delivery when door is automatically locked"
       input:
         send_notifications:
-          name: "Send Lock Notifications"
+          name: "Send Notifications"
           description: "Send a notification when the door is automatically locked"
           default: true
           selector:
@@ -113,13 +114,28 @@ blueprint:
                 - "notify.notify"
                 - "notify.mobile_app"
                 - "notify.persistent_notification"
-        
+
+    # Notification Content Section
+    notification_content_config:
+      name: "Notification Content"
+      icon: "mdi:message-text"
+      description: "Customize notification titles and messages"
+      collapsed: true
+      input:
         notification_title:
           name: "Notification Title"
           description: "Title for the lock notifications"
           default: "🔒 Auto Lock"
           selector:
             text:
+        
+        custom_lock_message:
+          name: "Lock Message"
+          description: "Custom message for lock notifications. Use {door_name} for door name and {delay} for lock delay."
+          default: "🔒 {door_name} has been automatically locked after being closed for {delay} minutes"
+          selector:
+            text:
+              multiline: true
 
     # Advanced Settings Section
     advanced_settings:
@@ -155,14 +171,6 @@ blueprint:
               max: 300
               unit_of_measurement: "seconds"
               mode: slider
-        
-        custom_lock_message:
-          name: "Custom Lock Message"
-          description: "Custom message for lock notifications. Use {door_name} for door name and {delay} for lock delay."
-          default: "🔒 {door_name} has been automatically locked after being closed for {delay} minutes"
-          selector:
-            text:
-              multiline: true
 
 mode: single
 max_exceeded: silent

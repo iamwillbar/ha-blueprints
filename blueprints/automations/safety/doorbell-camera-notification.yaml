@@ -61,32 +61,52 @@ blueprint:
     notification_config:
       name: "Notification Settings"
       icon: "mdi:bell-alert"
-      description: "Configure notification delivery and content"
+      description: "Configure notification delivery and behavior"
       input:
         notification_service:
-          name: Notification Service
-          description: The notification service to use for alerts
-          default: "notify.persistent_notification"
+          name: "Notification Service"
+          description: "The notification service to use for alerts"
+          default: "notify.notify"
           selector:
             select:
               custom_value: true
               options:
+                - "notify.notify"
+                - "notify.mobile_app"
                 - "notify.persistent_notification"
-                - "notify.mobile_app_iphone"
-                - "notify.mobile_app_android"
-                - "notify.pushbullet"
-                - "notify.telegram"
         
+        include_timestamp:
+          name: "Include Timestamp"
+          description: "Add timestamp to notification message"
+          default: true
+          selector:
+            boolean:
+        
+        cooldown_period:
+          name: "Cooldown Period"
+          description: "Minimum time between notifications to prevent spam"
+          default:
+            seconds: 30
+          selector:
+            duration:
+
+    # Notification Content Section
+    notification_content_config:
+      name: "Notification Content"
+      icon: "mdi:message-text"
+      description: "Customize notification titles and messages"
+      collapsed: true
+      input:
         notification_title:
-          name: Notification Title
-          description: Title for the notification
+          name: "Notification Title"
+          description: "Title for the notification"
           default: "🔔 Doorbell Pressed"
           selector:
             text:
         
         notification_message:
-          name: Notification Message
-          description: Message content for the notification
+          name: "Notification Message"
+          description: "Message content for the notification"
           default: "Someone is at the {{ location_name }}!"
           selector:
             text:
@@ -95,28 +115,13 @@ blueprint:
     # Advanced Settings Section
     advanced_settings:
       name: "Advanced Settings"
-      icon: "mdi:tune"
+      icon: "mdi:cog"
       description: "Optional advanced notification configuration"
       collapsed: true
       input:
-        cooldown_period:
-          name: Cooldown Period
-          description: Minimum time between notifications to prevent spam
-          default:
-            seconds: 30
-          selector:
-            duration:
-        
-        include_timestamp:
-          name: Include Timestamp
-          description: Add timestamp to notification message
-          default: true
-          selector:
-            boolean:
-        
         camera_timeout:
-          name: Camera Snapshot Timeout
-          description: Maximum time to wait for camera snapshot
+          name: "Camera Snapshot Timeout"
+          description: "Maximum time to wait for camera snapshot"
           default: 10
           selector:
             number:

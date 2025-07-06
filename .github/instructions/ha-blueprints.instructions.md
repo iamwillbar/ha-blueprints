@@ -55,10 +55,34 @@ blueprint:
 
 #### Input Organization Pattern
 Use sectioned inputs (requires HA 2024.6.0+) in this specific order:
-- **main_config**: Core configuration (sensors, devices, targets)
-- **threshold_config**: Timing thresholds, delays, and trigger conditions
-- **notification_config**: Notification settings and services  
-- **advanced_settings**: Optional settings (collapsed by default)
+- **main_config**: Core configuration (sensors, devices, targets) - Use purpose-specific icon (e.g., mdi:thermometer, mdi:door-closed, mdi:air-filter)
+- **threshold_config**: Timing thresholds, delays, and trigger conditions - Use icon: `mdi:tune` (collapsed by default)
+- **notification_config**: Basic notification settings - Use icon: `mdi:bell-alert`
+- **notification_content_config**: Notification titles and messages - Use icon: `mdi:message-text` (collapsed by default)
+- **advanced_settings**: Optional settings - Use icon: `mdi:cog` (collapsed by default)
+
+#### Notification Configuration Standards
+
+**notification_config Section:**
+- Always use icon: `mdi:bell-alert`
+- For blueprints where notifications are optional: Include `send_notifications` boolean toggle
+- For blueprints where notifications are the primary purpose: No send_notifications toggle needed
+- Always include `notification_service` with select selector and custom_value: true
+- Include notification timing/behavior settings (intervals, max_count, etc.)
+- Standard notification service options: `notify.notify`, `notify.mobile_app`, `notify.persistent_notification`
+
+**notification_content_config Section:**
+- Always use icon: `mdi:message-text` and collapsed: true
+- Always include `notification_title` before any message fields
+- Group related title and message pairs together (e.g., critical_title, critical_message)
+- Use consistent naming: `notification_title`, `notification_message`, `custom_message`, etc.
+- Provide helpful placeholder documentation in descriptions
+
+**Standard Input Names and Patterns:**
+- `send_notifications`: "Send Notifications" - Enable/disable notifications
+- `notification_service`: "Notification Service" - Service selector with custom_value
+- `notification_title`: "Notification Title" - Main notification title
+- `notification_message` or `custom_message`: Message content with placeholder support
 
 #### Naming Conventions
 - **Blueprint names**: Title case, descriptive, under 50 characters
@@ -75,6 +99,7 @@ Use sectioned inputs (requires HA 2024.6.0+) in this specific order:
 - Always include `max_exceeded: silent` to prevent log spam
 - Use `threshold_config` for timing-related settings (delays, intervals, thresholds)
 - Collapse `threshold_config` and `advanced_settings` sections by default
+- Use consistent icons: `mdi:tune` for threshold_config, `mdi:bell-alert` for notification_config, `mdi:message-text` for notification_content_config, `mdi:cog` for advanced_settings
 
 #### Home Assistant Integration
 - Blueprints are designed for ESPHome integration (especially air quality sensors)
