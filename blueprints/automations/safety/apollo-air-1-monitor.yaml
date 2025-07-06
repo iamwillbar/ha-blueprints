@@ -470,6 +470,58 @@ blueprint:
           selector:
             text:
         
+        co2_resolution_message:
+          name: "CO2 Resolution Message"
+          description: |
+            Message template for CO2 resolution notifications. Available variables:
+            - `{device_area}`: Location/area name
+            - `{co2_level}`: Current CO2 level
+          default: "✅ CO2 levels have returned to normal in {device_area} ({co2_level} ppm)."
+          selector:
+            text:
+              multiline: true
+        
+        pm25_resolution_message:
+          name: "PM2.5 Resolution Message"
+          description: |
+            Message template for PM2.5 resolution notifications. Available variables:
+            - `{device_area}`: Location/area name
+            - `{pm25_level}`: Current PM2.5 level
+          default: "✅ PM2.5 levels have returned to healthy in {device_area} ({pm25_level} µg/m³)."
+          selector:
+            text:
+              multiline: true
+        
+        voc_resolution_message:
+          name: "VOC Resolution Message"
+          description: |
+            Message template for VOC resolution notifications. Available variables:
+            - `{device_area}`: Location/area name
+            - `{voc_level}`: Current VOC index
+          default: "✅ VOC levels have returned to normal in {device_area} (index: {voc_level})."
+          selector:
+            text:
+              multiline: true
+        
+        # Critical CO notifications
+        critical_resolution_title:
+          name: "Critical CO Resolution Title"
+          description: "Title for CO resolution notifications"
+          default: "✅ Carbon Monoxide Cleared"
+          selector:
+            text:
+        
+        co_resolution_message:
+          name: "CO Resolution Message"
+          description: |
+            Message template for CO resolution notifications. Available variables:
+            - `{device_area}`: Location/area name
+            - `{co_level}`: Current CO level
+          default: "✅ Carbon monoxide levels have returned to safe in {device_area} ({co_level} ppm). All clear!"
+          selector:
+            text:
+              multiline: true
+        
         # Critical CO notifications
         critical_title:
           name: "Critical CO Alert Title"
@@ -547,6 +599,12 @@ variables:
   critical_title: !input critical_title
   co_warning_message_template: !input co_warning_message
   co_critical_message_template: !input co_critical_message
+  # Resolution message templates
+  co2_normal_message_template: !input co2_resolution_message
+  pm25_normal_message_template: !input pm25_resolution_message
+  voc_normal_message_template: !input voc_resolution_message
+  critical_resolution_title: !input critical_resolution_title
+  co_normal_message_template: !input co_resolution_message
 
 mode: parallel
 max_exceeded: silent
@@ -637,7 +695,7 @@ trigger:
   
   # Repeat standard alerts (if enabled)
   - platform: time_pattern
-    minutes: !input standard_reminder_interval
+    minutes: !input reminder_interval
     id: standard_repeat_check
 
 condition: []
@@ -776,7 +834,7 @@ action:
           - condition: trigger
             id: standard_repeat_check
           - condition: template
-            value_template: "{{ standard_reminder_interval > 0 }}"
+            value_template: "{{ reminder_interval > 0 }}"
           - condition: or
             conditions:
               - condition: template
