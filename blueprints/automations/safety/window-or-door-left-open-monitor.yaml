@@ -42,61 +42,11 @@ blueprint:
                   - door
                   - window
 
-    # Notification Settings Section
-    notification_config:
-      name: "Notification Settings"
-      icon: "mdi:message-alert"
-      description: "Configure notification delivery and content"
-      input:
-        notification_service:
-          name: "Notification Service"
-          description: "Select the notification service to send alerts to"
-          default: "notify.notify"
-          selector:
-            select:
-              custom_value: true
-              options:
-                - "notify.notify"
-                - "notify.mobile_app"
-                - "notify.persistent_notification"
-        
-        notification_title:
-          name: "Notification Title"
-          description: "Title for the notifications"
-          default: "🚪 Door/Window Alert"
-          selector:
-            text:
-        
-        send_resolution_notification:
-          name: "Send Resolution Notification"
-          description: "Send a notification when the door/window is finally closed"
-          default: true
-          selector:
-            boolean:
-
     # Threshold Configuration Section
     threshold_config:
       name: "Threshold Configuration"
       icon: "mdi:tune"
       description: "Customize timing and alert thresholds"
-      collapsed: true
-      input:
-        grace_period:
-          name: "Grace Period"
-          description: "Additional time to allow before starting alerts"
-          default: 0
-          selector:
-            number:
-              min: 0
-              max: 30
-              unit_of_measurement: "minutes"
-              mode: slider
-    
-    # Advanced Settings Section
-    advanced_settings:
-      name: "Advanced Settings"
-      icon: "mdi:cog"
-      description: "Configure delays and reminder intervals"
       collapsed: true
       input:
         initial_delay:
@@ -131,6 +81,45 @@ blueprint:
               max: 20
               mode: box
 
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:message-alert"
+      description: "Configure notification delivery and content"
+      input:
+        notification_service:
+          name: "Notification Service"
+          description: "Select the notification service to send alerts to"
+          default: "notify.notify"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+        
+        notification_title:
+          name: "Notification Title"
+          description: "Title for the notifications"
+          default: "🚪 Door/Window Alert"
+          selector:
+            text:
+        
+        send_resolution_notification:
+          name: "Send Resolution Notification"
+          description: "Send a notification when the door/window is finally closed"
+          default: true
+          selector:
+            boolean:
+    
+    # Advanced Settings Section
+    advanced_settings:
+      name: "Advanced Settings"
+      icon: "mdi:cog"
+      description: "Optional settings for customizing notification messages"
+      collapsed: true
+      input:
         initial_message:
           name: "Initial Notification Message"
           description: "Custom message for the first notification. Use {door_name} for sensor name and {time} for delay time."
@@ -169,6 +158,7 @@ variables:
   reminder_interval: !input reminder_interval
   max_reminders: !input max_reminders
   notification_service: !input notification_service
+  notification_title: !input notification_title
   initial_message: !input initial_message
   reminder_message: !input reminder_message
   resolution_message: !input resolution_message
@@ -194,7 +184,7 @@ action:
     data:
       message: >
         {{ initial_message.replace('{door_name}', door_name).replace('{time}', initial_delay | string) }}
-      title: "Door/Window Left Open"
+      title: "{{ notification_title }}"
   
   # Send periodic reminder notifications
   - alias: "Send reminder notifications"
@@ -226,7 +216,7 @@ action:
           data:
             message: >
               {{ reminder_message.replace('{door_name}', door_name).replace('{time}', total_time_open | string) }}
-            title: "Door/Window Still Open"
+            title: "{{ notification_title }}"
   
   # Optional: Wait for door to close and send resolution notification
   - alias: "Wait for door to close and send resolution notification"
@@ -258,4 +248,4 @@ action:
             data:
               message: >
                 {{ resolution_message.replace('{door_name}', door_name).replace('{time}', total_minutes | string) }}
-              title: "Door/Window Closed"
+              title: "{{ notification_title }}"
