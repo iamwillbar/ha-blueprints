@@ -47,7 +47,6 @@ blueprint:
       name: "Threshold Configuration"
       icon: "mdi:tune"
       description: "Customize timing and alert thresholds"
-      collapsed: true
       input:
         initial_delay:
           name: "Initial Delay"
@@ -70,16 +69,6 @@ blueprint:
               max: 60
               unit_of_measurement: "minutes"
               mode: slider
-        
-        max_reminders:
-          name: "Maximum Reminders"
-          description: "Maximum number of reminder notifications (0 = unlimited)"
-          default: 3
-          selector:
-            number:
-              min: 0
-              max: 20
-              mode: box
 
     # Notification Settings Section
     notification_config:
@@ -120,6 +109,16 @@ blueprint:
       description: "Optional settings for customizing notification messages"
       collapsed: true
       input:
+        max_reminders:
+          name: "Maximum Reminders"
+          description: "Maximum number of reminder notifications (0 = unlimited)"
+          default: 3
+          selector:
+            number:
+              min: 0
+              max: 20
+              mode: box
+        
         initial_message:
           name: "Initial Notification Message"
           description: "Custom message for the first notification. Use {door_name} for sensor name and {time} for delay time."
