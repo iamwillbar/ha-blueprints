@@ -1,0 +1,293 @@
+blueprint:
+  name: "Auto Door Lock When Closed"
+  description: |
+    Automatically lock a door when it has been closed for a specified amount of time.
+    
+    **Features:**
+    - Configurable delay before locking (default 15 minutes)
+    - Works with any door sensor and smart lock combination
+    - Optional notifications when door is locked
+    - Safety check to ensure door is actually closed before locking
+    - Parallel execution for multiple doors
+    - Optional grace period to prevent immediate locking
+    
+    **Requirements:**
+    - Door binary sensor with door device class
+    - Compatible smart lock entity
+    - Home Assistant notification service (optional)
+    
+    **Usage Notes:**
+    - Door must be fully closed before the timer starts
+    - Grace period allows time for manual locking before automation
+    - Lock commands are only sent if the door is confirmed closed
+    - Use multiple instances for different doors with different delays
+    
+    **Safety Features:**
+    - Double-checks door state before locking
+    - Will not lock if door sensor shows open
+    - Optional notifications confirm successful locking
+  domain: automation
+  author: "Home Assistant Community"
+  homeassistant:
+    min_version: "2024.6.0"
+  input:
+    # Main Configuration Section
+    main_config:
+      name: "Main Configuration"
+      icon: "mdi:door-closed-lock"
+      description: "Primary door and lock configuration"
+      input:
+        door_sensor:
+          name: "Door Sensor"
+          description: "Binary sensor that detects if the door is open or closed"
+          selector:
+            entity:
+              filter:
+                domain: binary_sensor
+                device_class: door
+        
+        door_lock:
+          name: "Door Lock"
+          description: "Smart lock to automatically lock when door has been closed"
+          selector:
+            entity:
+              filter:
+                domain: lock
+        
+        door_name:
+          name: "Door Name"
+          description: "Descriptive name for the door (e.g., 'Front Door', 'Back Door')"
+          default: "Door"
+          selector:
+            text:
+
+    # Threshold Configuration Section
+    threshold_config:
+      name: "Threshold Configuration"
+      icon: "mdi:timer"
+      description: "Configure when the door should be automatically locked"
+      input:
+        lock_delay:
+          name: "Lock Delay"
+          description: "Time to wait after door closes before automatically locking"
+          default: 15
+          selector:
+            number:
+              min: 1
+              max: 120
+              unit_of_measurement: "minutes"
+              mode: slider
+        
+        grace_period:
+          name: "Grace Period"
+          description: "Additional time to wait if door was recently unlocked manually (prevents immediate re-locking)"
+          default: 2
+          selector:
+            number:
+              min: 0
+              max: 30
+              unit_of_measurement: "minutes"
+              mode: slider
+
+    # Notification Settings Section
+    notification_config:
+      name: "Notification Settings"
+      icon: "mdi:message-lock"
+      description: "Configure notification delivery when door is automatically locked"
+      input:
+        send_notifications:
+          name: "Send Lock Notifications"
+          description: "Send a notification when the door is automatically locked"
+          default: true
+          selector:
+            boolean:
+        
+        notification_service:
+          name: "Notification Service"
+          description: "Select the notification service to send lock confirmations"
+          default: "notify.notify"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - "notify.notify"
+                - "notify.mobile_app"
+                - "notify.persistent_notification"
+        
+        notification_title:
+          name: "Notification Title"
+          description: "Title for the lock notifications"
+          default: "🔒 Auto Lock"
+          selector:
+            text:
+
+    # Advanced Settings Section
+    advanced_settings:
+      name: "Advanced Settings"
+      icon: "mdi:cog"
+      description: "Optional advanced configuration and safety features"
+      collapsed: true
+      input:
+        check_lock_state:
+          name: "Verify Lock State"
+          description: "Check if door is already locked before attempting to lock (prevents unnecessary lock commands)"
+          default: true
+          selector:
+            boolean:
+        
+        max_lock_attempts:
+          name: "Maximum Lock Attempts"
+          description: "Maximum number of times to attempt locking if first attempt fails"
+          default: 3
+          selector:
+            number:
+              min: 1
+              max: 5
+              mode: box
+        
+        lock_retry_delay:
+          name: "Lock Retry Delay"
+          description: "Time to wait between lock attempts if initial attempt fails"
+          default: 30
+          selector:
+            number:
+              min: 10
+              max: 300
+              unit_of_measurement: "seconds"
+              mode: slider
+        
+        custom_lock_message:
+          name: "Custom Lock Message"
+          description: "Custom message for lock notifications. Use {door_name} for door name and {delay} for lock delay."
+          default: "🔒 {door_name} has been automatically locked after being closed for {delay} minutes"
+          selector:
+            text:
+              multiline: true
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input door_sensor
+    to: "off"  # Door closed
+    for:
+      minutes: !input lock_delay
+
+variables:
+  door_sensor: !input door_sensor
+  door_lock: !input door_lock
+  door_name: !input door_name
+  lock_delay: !input lock_delay
+  grace_period: !input grace_period
+  send_notifications: !input send_notifications
+  notification_service: !input notification_service
+  notification_title: !input notification_title
+  check_lock_state: !input check_lock_state
+  max_lock_attempts: !input max_lock_attempts
+  lock_retry_delay: !input lock_retry_delay
+  custom_lock_message: !input custom_lock_message
+
+condition:
+  # Ensure door is still closed
+  - condition: state
+    entity_id: !input door_sensor
+    state: "off"
+  
+  # Check if grace period should be applied (if lock was recently manually unlocked)
+  - condition: template
+    value_template: >
+      {% if grace_period > 0 %}
+        {% set last_unlocked = state_attr(door_lock, 'changed') %}
+        {% if last_unlocked %}
+          {{ (now() - as_datetime(last_unlocked)).total_seconds() > (grace_period * 60) }}
+        {% else %}
+          true
+        {% endif %}
+      {% else %}
+        true
+      {% endif %}
+
+action:
+  # Double-check door is still closed before proceeding
+  - alias: "Verify door is closed before locking"
+    condition:
+      - condition: state
+        entity_id: !input door_sensor
+        state: "off"
+  
+  # Optional: Check if door is already locked to avoid unnecessary commands
+  - alias: "Check if door is already locked"
+    if:
+      - condition: template
+        value_template: "{{ check_lock_state }}"
+      - condition: state
+        entity_id: !input door_lock
+        state: "locked"
+    then:
+      # Door is already locked, no action needed
+      - stop: "Door already locked"
+  
+  # Attempt to lock the door with retry logic
+  - alias: "Lock door with retry attempts"
+    repeat:
+      count: "{{ max_lock_attempts }}"
+      sequence:
+        # Verify door is still closed before each lock attempt
+        - alias: "Verify door still closed before lock attempt"
+          condition:
+            - condition: state
+              entity_id: !input door_sensor
+              state: "off"
+        
+        # Attempt to lock the door
+        - alias: "Lock the door"
+          service: lock.lock
+          target:
+            entity_id: !input door_lock
+        
+        # Wait a moment for lock to respond
+        - delay:
+            seconds: 5
+        
+        # Check if lock was successful
+        - alias: "Check if lock was successful"
+          if:
+            - condition: state
+              entity_id: !input door_lock
+              state: "locked"
+          then:
+            # Lock successful, send notification and exit
+            - alias: "Send successful lock notification"
+              if:
+                - condition: template
+                  value_template: "{{ send_notifications }}"
+              then:
+                - service: "{{ notification_service }}"
+                  data:
+                    title: "{{ notification_title }}"
+                    message: >
+                      {{ custom_lock_message.replace('{door_name}', door_name).replace('{delay}', lock_delay | string) }}
+            - stop: "Lock successful"
+          else:
+            # Lock failed, wait before retry (unless this is the last attempt)
+            - alias: "Wait before retry if not last attempt"
+              if:
+                - condition: template
+                  value_template: "{{ repeat.index < max_lock_attempts }}"
+              then:
+                - delay:
+                    seconds: "{{ lock_retry_delay }}"
+  
+  # If we reach here, all lock attempts failed
+  - alias: "Send lock failure notification"
+    if:
+      - condition: template
+        value_template: "{{ send_notifications }}"
+    then:
+      - service: "{{ notification_service }}"
+        data:
+          title: "⚠️ Auto Lock Failed"
+          message: >
+            Failed to automatically lock {{ door_name }} after {{ max_lock_attempts }} attempts.
+            Please check the lock status manually.
