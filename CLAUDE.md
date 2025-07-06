@@ -1,6 +1,9 @@
+---
+applyTo: '**'
+---
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/c### Blueprint Quality Standards
 
 ## Repository Overview
 
@@ -51,11 +54,11 @@ blueprint:
 ```
 
 #### Input Organization Pattern
-Use sectioned inputs (requires HA 2024.6.0+):
+Use sectioned inputs (requires HA 2024.6.0+) in this specific order:
 - **main_config**: Core configuration (sensors, devices, targets)
-- **notification_config**: Notification settings and services
+- **threshold_config**: Timing thresholds, delays, and trigger conditions
+- **notification_config**: Notification settings and services  
 - **advanced_settings**: Optional settings (collapsed by default)
-- **threshold_config**: Customizable alert thresholds (collapsed)
 
 #### Naming Conventions
 - **Blueprint names**: Title case, descriptive, under 50 characters
@@ -67,12 +70,21 @@ Use sectioned inputs (requires HA 2024.6.0+):
 - Define variables section for commonly used values
 - Use appropriate selectors with filters for better UX
 - Provide sensible defaults for all optional inputs
-- Use `mode: parallel` for automations that may run simultaneously
+- Use `mode: single` for single-entity automations (one door, one sensor)
+- Use `mode: parallel` only for multi-entity automations that can run simultaneously
+- Always include `max_exceeded: silent` to prevent log spam
+- Use `threshold_config` for timing-related settings (delays, intervals, thresholds)
+- Collapse `threshold_config` and `advanced_settings` sections by default
 
 #### Home Assistant Integration
 - Blueprints are designed for ESPHome integration (especially air quality sensors)
 - Support for standard HA notification services
 - Compatible with domain-specific device classes (motion, temperature, etc.)
+
+#### Automation Mode Selection
+- **single**: For single-entity automations (one sensor, one device)
+- **parallel**: Only for multi-entity automations that can safely run concurrently
+- Always include `max_exceeded: silent`
 
 ## Semantic Versioning
 
@@ -113,6 +125,5 @@ For safety-critical blueprints (like CO monitoring):
 
 ## Important Files
 
-- `.copilot-instructions.md`: Comprehensive blueprint development guidelines
 - `README.md`: Repository documentation and setup instructions
 - Individual blueprint files contain extensive inline documentation
