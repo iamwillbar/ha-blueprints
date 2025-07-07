@@ -100,17 +100,6 @@ blueprint:
             seconds: 30
           selector:
             duration:
-        
-        camera_timeout:
-          name: "Camera Snapshot Timeout"
-          description: "Maximum time to wait for camera snapshot"
-          default: 10
-          selector:
-            number:
-              min: 5
-              max: 30
-              step: 1
-              unit_of_measurement: "seconds"
 
 variables:
   doorbell_entity: !input doorbell_sensor
@@ -149,7 +138,6 @@ action:
               entity_id: !input camera_entity
             data:
               filename: "/tmp/doorbell_snapshot_{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg"
-            timeout: !input camera_timeout
             continue_on_error: true
           
           - service: !input notification_service
