@@ -712,7 +712,7 @@ action:
               title: "{{ critical_title }}"
               message: >
                 {{ co_critical_message_template.replace('{device_area}', device_area)
-                                              .replace('{co_level}', states(co_entity))
+                                              .replace('{co_level}', states(co_entity) | round(1) | string)
                                               .replace('{co_critical_limit}', co_critical_limit | string) }}
                 
       - conditions:
@@ -724,7 +724,7 @@ action:
               title: "{{ critical_title }}"
               message: >
                 {{ co_warning_message_template.replace('{device_area}', device_area)
-                                             .replace('{co_level}', states(co_entity))
+                                             .replace('{co_level}', states(co_entity) | round(1) | string)
                                              .replace('{co_warning_limit}', co_warning_limit | string) }}
                 
       - conditions:
@@ -736,7 +736,7 @@ action:
               title: "{{ critical_resolution_title }}"
               message: >
                 {{ co_normal_message_template.replace('{device_area}', device_area)
-                                            .replace('{co_level}', states(co_entity)) }}
+                                            .replace('{co_level}', states(co_entity) | round(1) | string) }}
                 
       # === REPEATED CO CRITICAL ALERTS ===
       - conditions:
@@ -750,7 +750,7 @@ action:
               title: "{{ reminder_title }}"
               message: >
                 {{ co_critical_message_template.replace('{device_area}', device_area)
-                                              .replace('{co_level}', states(co_entity))
+                                              .replace('{co_level}', states(co_entity) | round(1) | string)
                                               .replace('{co_critical_limit}', co_critical_limit | string) }}
 
       # === STANDARD AIR QUALITY ALERTS ===  
@@ -763,7 +763,7 @@ action:
               title: "{{ notification_title }}"
               message: >
                 {{ co2_alert_message_template.replace('{device_area}', device_area)
-                                           .replace('{co2_level}', states(co2_entity))
+                                           .replace('{co2_level}', states(co2_entity) | round(0) | string)
                                            .replace('{co2_limit}', co2_limit | string) }}
                 
       - conditions:
@@ -777,7 +777,7 @@ action:
               title: "{{ resolution_title }}"
               message: >
                 {{ co2_normal_message_template.replace('{device_area}', device_area)
-                                             .replace('{co2_level}', states(co2_entity)) }}
+                                             .replace('{co2_level}', states(co2_entity) | round(0) | string) }}
                 
       - conditions:
           - condition: trigger
@@ -788,7 +788,7 @@ action:
               title: "{{ notification_title }}"
               message: >
                 {{ pm25_alert_message_template.replace('{device_area}', device_area)
-                                             .replace('{pm25_level}', states(pm25_entity))
+                                             .replace('{pm25_level}', states(pm25_entity) | round(1) | string)
                                              .replace('{pm25_limit}', pm25_limit | string) }}
                 
       - conditions:
@@ -802,7 +802,7 @@ action:
               title: "{{ resolution_title }}"
               message: >
                 {{ pm25_normal_message_template.replace('{device_area}', device_area)
-                                              .replace('{pm25_level}', states(pm25_entity)) }}
+                                              .replace('{pm25_level}', states(pm25_entity) | round(1) | string) }}
                 
       - conditions:
           - condition: trigger
@@ -813,7 +813,7 @@ action:
               title: "{{ notification_title }}"
               message: >
                 {{ voc_alert_message_template.replace('{device_area}', device_area)
-                                           .replace('{voc_level}', states(voc_entity))
+                                           .replace('{voc_level}', states(voc_entity) | round(0) | string)
                                            .replace('{voc_limit}', voc_limit | string) }}
                 
       - conditions:
@@ -827,7 +827,7 @@ action:
               title: "{{ resolution_title }}"
               message: >
                 {{ voc_normal_message_template.replace('{device_area}', device_area)
-                                             .replace('{voc_level}', states(voc_entity)) }}
+                                             .replace('{voc_level}', states(voc_entity) | round(0) | string) }}
       
       # === STANDARD ALERT REMINDERS ===
       - conditions:
@@ -854,7 +854,7 @@ action:
                     data:
                       title: "{{ reminder_title }}"
                       message: >
-                        {{ co2_alert_message_template.replace('{device_area}', device_area).replace('{co2_level}', states(co2_entity)).replace('{co2_limit}', co2_limit | string) }}
+                        {{ co2_alert_message_template.replace('{device_area}', device_area).replace('{co2_level}', states(co2_entity) | round(0) | string).replace('{co2_limit}', co2_limit | string) }}
               
               - conditions:
                   - condition: template
@@ -864,7 +864,7 @@ action:
                     data:
                       title: "{{ reminder_title }}"
                       message: >
-                        {{ pm25_alert_message_template.replace('{device_area}', device_area).replace('{pm25_level}', states(pm25_entity)).replace('{pm25_limit}', pm25_limit | string) }}
+                        {{ pm25_alert_message_template.replace('{device_area}', device_area).replace('{pm25_level}', states(pm25_entity) | round(1) | string).replace('{pm25_limit}', pm25_limit | string) }}
               
               - conditions:
                   - condition: template
@@ -874,7 +874,7 @@ action:
                     data:
                       title: "{{ reminder_title }}"
                       message: >
-                        {{ voc_alert_message_template.replace('{device_area}', device_area).replace('{voc_level}', states(voc_entity)).replace('{voc_limit}', voc_limit | string) }}
+                        {{ voc_alert_message_template.replace('{device_area}', device_area).replace('{voc_level}', states(voc_entity) | round(0) | string).replace('{voc_limit}', voc_limit | string) }}
                 
       # === ADDITIONAL GAS ALERTS (if MiCS sensor present) ===
       - conditions:
@@ -887,7 +887,7 @@ action:
             data:
               title: "🧪 Ammonia Alert - {{ device_area }}"
               message: >
-                High ammonia levels detected in {{ device_area }}: {{ states(ammonia_entity) | round(2) }}ppm (threshold: {{ ammonia_limit }}ppm)
+                High ammonia levels detected in {{ device_area }}: {{ states(ammonia_entity) | round(1) }}ppm (threshold: {{ ammonia_limit }}ppm)
                 
       - conditions:
           - condition: trigger
@@ -899,7 +899,7 @@ action:
             data:
               title: "🍷 Ethanol Alert - {{ device_area }}"
               message: >
-                High ethanol levels detected in {{ device_area }}: {{ states(ethanol_entity) | round(2) }}ppm (threshold: {{ ethanol_limit }}ppm)
+                High ethanol levels detected in {{ device_area }}: {{ states(ethanol_entity) | round(0) }}ppm (threshold: {{ ethanol_limit }}ppm)
                 
       - conditions:
           - condition: trigger
@@ -911,7 +911,7 @@ action:
             data:
               title: "🔥 Methane Alert - {{ device_area }}"
               message: >
-                High methane levels detected in {{ device_area }}: {{ states(methane_entity) | round(2) }}ppm (threshold: {{ methane_limit }}ppm)
+                High methane levels detected in {{ device_area }}: {{ states(methane_entity) | round(0) }}ppm (threshold: {{ methane_limit }}ppm)
                 
       - conditions:
           - condition: trigger
@@ -923,7 +923,7 @@ action:
             data:
               title: "⚡ Hydrogen Alert - {{ device_area }}"
               message: >
-                High hydrogen levels detected in {{ device_area }}: {{ states(hydrogen_entity) | round(2) }}ppm (threshold: {{ hydrogen_limit }}ppm)
+                High hydrogen levels detected in {{ device_area }}: {{ states(hydrogen_entity) | round(0) }}ppm (threshold: {{ hydrogen_limit }}ppm)
                 
       - conditions:
           - condition: trigger
