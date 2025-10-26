@@ -403,6 +403,20 @@ blueprint:
               max: 50
               mode: box
 
+    # Advanced Settings Section
+    advanced_settings:
+      name: "Advanced Settings"
+      icon: "mdi:cog"
+      description: "Advanced configuration options"
+      collapsed: true
+      input:
+        enable_methane_alerts:
+          name: "Enable Methane Alerts"
+          description: "Enable or disable methane gas alerts. Note: Methane readings spike when exposed to high amounts of other gasses."
+          default: true
+          selector:
+            boolean:
+
     # Notification Content Section
     notification_content_config:
       name: "Customize Notification Content (Optional)"
@@ -589,6 +603,7 @@ variables:
   send_resolution_notification: !input send_resolution_notification
   critical_reminder_interval: !input critical_reminder_interval
   critical_max_reminder_count: !input critical_max_reminder_count
+  enable_methane_alerts: !input enable_methane_alerts
   # Message templates
   notification_title: !input notification_title
   co2_alert_message_template: !input co2_alert_message
@@ -906,6 +921,8 @@ action:
             id: methane_high
           - condition: template
             value_template: "{{ methane_entity != '' and methane_entity != 'unavailable' }}"
+          - condition: template
+            value_template: "{{ enable_methane_alerts }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
