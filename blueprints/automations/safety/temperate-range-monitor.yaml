@@ -255,6 +255,39 @@ variables:
   high_temp_reminder_message_template: !input high_temp_reminder_message
   resolution_title: !input resolution_title
   resolution_message_template: !input resolution_message
+  # Determine which message template to use based on trigger
+  initial_message: >
+    {% if trigger.id == 'below_range' %}
+      {{ low_temp_message_template }}
+    {% else %}
+      {{ high_temp_message_template }}
+    {% endif %}
+  reminder_message: >
+    {% if trigger.id == 'below_range' %}
+      {{ low_temp_reminder_message_template }}
+    {% else %}
+      {{ high_temp_reminder_message_template }}
+    {% endif %}
+  # Condition for checking if still out of range
+  still_out_of_range: >
+    {% if trigger.id == 'below_range' %}
+      {{ states(sensor_name) | float < min_temp }}
+    {% else %}
+      {{ states(sensor_name) | float > max_temp }}
+    {% endif %}
+  # Wait trigger for return to normal
+  return_trigger_platform: >
+    {% if trigger.id == 'below_range' %}
+      above
+    {% else %}
+      below
+    {% endif %}
+  return_trigger_value: >
+    {% if trigger.id == 'below_range' %}
+      {{ min_temp }}
+    {% else %}
+      {{ max_temp }}
+    {% endif %}
 
 trigger:
   # Trigger when temperature goes outside range
@@ -271,115 +304,85 @@ trigger:
     for:
       minutes: !input initial_notification_delay
     id: "above_range"
-  
-  # Trigger when temperature returns to normal range
-  - platform: numeric_state
-    entity_id: !input temperature_sensor
-    above: !input min_temperature
-    below: !input max_temperature
-    id: "back_in_range"
 
 condition: []
 
 action:
+  # Send initial notification
+  - service: "{{ notification_service }}"
+    data:
+      title: "{{ notification_title }}"
+      message: >
+        {{ initial_message.replace('{location}', location)
+                         .replace('{current_temp}', current_temp | string)
+                         .replace('{min_temp}', min_temp | string)
+                         .replace('{max_temp}', max_temp | string)
+                         .replace('{temp_unit}', temp_unit) }}
+  
+  # Handle reminders and resolution
   - choose:
-      # Temperature too low
       - conditions:
-          - condition: trigger
-            id: "below_range"
+          - condition: template
+            value_template: "{{ send_reminders }}"
         sequence:
-          - service: "{{ notification_service }}"
-            data:
-              title: "{{ notification_title }}"
-              message: >
-                {{ low_temp_message_template.replace('{location}', location)
-                                           .replace('{current_temp}', current_temp | string)
-                                           .replace('{min_temp}', min_temp | string)
-                                           .replace('{max_temp}', max_temp | string)
-                                           .replace('{temp_unit}', temp_unit) }}
-          
-          # Set up repeat notifications if enabled
-          - if:
-              - condition: template
-                value_template: "{{ send_reminders }}"
-            then:
-              - repeat:
-                  count: "{{ max_reminder_count if max_reminder_count > 0 else 999 }}"
-                  sequence:
-                    - delay:
-                        minutes: "{{ reminder_interval }}"
-                    - if:
-                        - condition: numeric_state
-                          entity_id: !input temperature_sensor
-                          below: !input min_temperature
-                      then:
+          - repeat:
+              while:
+                - condition: template
+                  value_template: "{{ still_out_of_range and (repeat.index <= max_reminder_count or max_reminder_count == 0) }}"
+              sequence:
+                - delay:
+                    minutes: "{{ reminder_interval }}"
+                - choose:
+                    - conditions:
+                        - condition: template
+                          value_template: "{{ still_out_of_range }}"
+                      sequence:
                         - service: "{{ notification_service }}"
                           data:
                             title: "{{ reminder_title }}"
                             message: >
-                              {{ low_temp_reminder_message_template.replace('{location}', location)
-                                                                 .replace('{current_temp}', states(sensor_name) | string)
-                                                                 .replace('{min_temp}', min_temp | string)
-                                                                 .replace('{max_temp}', max_temp | string)
-                                                                 .replace('{temp_unit}', temp_unit)
-                                                                 .replace('{duration}', relative_time(trigger.from_state.last_changed)) }}
-                      else:
-                        - stop: "Temperature is back in range"
-      
-      # Temperature too high
-      - conditions:
-          - condition: trigger
-            id: "above_range"
-        sequence:
-          - service: "{{ notification_service }}"
-            data:
-              title: "{{ notification_title }}"
-              message: >
-                {{ high_temp_message_template.replace('{location}', location)
-                                            .replace('{current_temp}', current_temp | string)
-                                            .replace('{min_temp}', min_temp | string)
-                                            .replace('{max_temp}', max_temp | string)
-                                            .replace('{temp_unit}', temp_unit) }}
-          
-          # Set up repeat notifications if enabled
-          - if:
-              - condition: template
-                value_template: "{{ send_reminders }}"
-            then:
-              - repeat:
-                  while:
-                    - condition: numeric_state
-                      entity_id: !input temperature_sensor
-                      above: !input max_temperature
-                  sequence:
-                    - delay: !input reminder_interval
+                              {{ reminder_message.replace('{location}', location)
+                                                 .replace('{current_temp}', states(sensor_name) | string)
+                                                 .replace('{min_temp}', min_temp | string)
+                                                 .replace('{max_temp}', max_temp | string)
+                                                 .replace('{temp_unit}', temp_unit)
+                                                 .replace('{duration}', relative_time(trigger.from_state.last_changed)) }}
+                  default:
                     - if:
-                        - condition: numeric_state
-                          entity_id: !input temperature_sensor
-                          above: !input max_temperature
+                        - condition: template
+                          value_template: "{{ send_resolution_notification }}"
                       then:
                         - service: "{{ notification_service }}"
                           data:
-                            title: "{{ reminder_title }}"
+                            title: "{{ resolution_title }}"
                             message: >
-                              {{ high_temp_reminder_message_template.replace('{location}', location).replace('{current_temp}', states(sensor_name) | string).replace('{temp_unit}', temp_unit).replace('{duration}', relative_time(trigger.from_state.last_changed)) }}
-      
-      # Temperature back in range
-      - conditions:
-          - condition: trigger
-            id: "back_in_range"
+                              {{ resolution_message_template.replace('{location}', location)
+                                                           .replace('{current_temp}', states(sensor_name) | string)
+                                                           .replace('{min_temp}', min_temp | string)
+                                                           .replace('{max_temp}', max_temp | string)
+                                                           .replace('{temp_unit}', temp_unit) }}
+                    - stop: "Temperature is back in range"
+    default:
+      # When reminders are disabled, wait for temperature to return to normal
+      - wait_for_trigger:
+          - platform: numeric_state
+            entity_id: !input temperature_sensor
+            above: "{{ min_temp if trigger.id == 'below_range' else -999 }}"
+            below: "{{ max_temp if trigger.id == 'above_range' else 999 }}"
+      - if:
           - condition: template
             value_template: "{{ send_resolution_notification }}"
-        sequence:
+        then:
           - service: "{{ notification_service }}"
             data:
               title: "{{ resolution_title }}"
               message: >
                 {{ resolution_message_template.replace('{location}', location)
-                                             .replace('{current_temp}', current_temp | string)
+                                             .replace('{current_temp}', states(sensor_name) | string)
                                              .replace('{min_temp}', min_temp | string)
                                              .replace('{max_temp}', max_temp | string)
                                              .replace('{temp_unit}', temp_unit) }}
+
 
 # Use parallel mode to allow multiple temperature ranges to be monitored simultaneously
 # Silent mode prevents log spam if multiple instances trigger
