@@ -364,11 +364,23 @@ action:
                     - stop: "Temperature is back in range"
     default:
       # When reminders are disabled, wait for temperature to return to normal
-      - wait_for_trigger:
-          - platform: numeric_state
-            entity_id: !input temperature_sensor
-            above: "{{ min_temp if trigger.id == 'below_range' else -999 }}"
-            below: "{{ max_temp if trigger.id == 'above_range' else 999 }}"
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: "below_range"
+            sequence:
+              - wait_for_trigger:
+                  - platform: numeric_state
+                    entity_id: !input temperature_sensor
+                    above: !input min_temperature
+          - conditions:
+              - condition: trigger
+                id: "above_range"
+            sequence:
+              - wait_for_trigger:
+                  - platform: numeric_state
+                    entity_id: !input temperature_sensor
+                    below: !input max_temperature
       - if:
           - condition: template
             value_template: "{{ send_resolution_notification }}"
