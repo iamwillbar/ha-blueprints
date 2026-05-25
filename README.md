@@ -45,7 +45,7 @@ ha-blueprints/
 │   └── script/
 │       └── notifications/
 │           └── smart-notification-center.yaml
-├── .copilot-instructions.md         # Development guidelines
+├── AGENTS.md                        # Development guidelines for agents and contributors
 └── README.md
 ```
 
@@ -74,7 +74,7 @@ blueprint:
 - ✅ Follow semantic versioning conventions
 - ✅ Test thoroughly before submitting
 
-See [`.copilot-instructions.md`](.copilot-instructions.md) for comprehensive development guidelines.
+See [`AGENTS.md`](AGENTS.md) for comprehensive development guidelines.
 
 ## 🤖 Automated Workflow
 
