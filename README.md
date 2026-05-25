@@ -15,7 +15,7 @@ A comprehensive collection of high-quality Home Assistant blueprints with automa
 
 ### Browse Available Blueprints
 
-Visit our **[Blueprint Catalog](https://YOUR_USERNAME.github.io/ha-blueprints/)** to see all available blueprints with easy import buttons.
+Visit our **[Blueprint Catalog](https://iamwillbar.github.io/ha-blueprints/)** to see all available blueprints with easy import buttons.
 
 ### Install a Blueprint
 
@@ -27,7 +27,7 @@ Visit our **[Blueprint Catalog](https://YOUR_USERNAME.github.io/ha-blueprints/)*
 
 ### Example Import URL Format
 ```
-https://YOUR_USERNAME.github.io/ha-blueprints/blueprints/automation/lighting/motion-activated-light.yaml
+https://iamwillbar.github.io/ha-blueprints/blueprints/automation/lighting/motion-activated-light.yaml
 ```
 
 ## 📂 Repository Structure
@@ -126,7 +126,7 @@ We welcome contributions! Here's how to add a new blueprint:
 
 ### 1. Fork and Clone
 ```bash
-git clone https://github.com/YOUR_USERNAME/ha-blueprints.git
+git clone https://github.com/iamwillbar/ha-blueprints.git
 cd ha-blueprints
 ```
 
@@ -165,7 +165,7 @@ Once merged, the GitHub Actions workflow will:
    - Enable "Allow GitHub Actions to create and approve pull requests"
 
 3. **Update URLs**:
-   - Replace `YOUR_USERNAME` in this README with your GitHub username
+   - Confirm README URLs use `iamwillbar` as the GitHub username
    - Update repository name if different from `ha-blueprints`
 
 ### Required Repository Structure
