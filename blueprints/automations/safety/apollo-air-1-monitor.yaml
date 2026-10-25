@@ -30,6 +30,8 @@ blueprint:
     - MiCS sensor readings may be less reliable than primary sensors
     - Critical CO alerts will repeat until levels normalize
     - Standard alerts can be configured with reminders or single notifications
+    - Resolution notifications are suppressed when a sensor is recovering from
+      unavailable/unknown (e.g. after a device reboot or firmware update)
   domain: automation
   author: "William Bartholomew"
   homeassistant:
@@ -620,6 +622,14 @@ variables:
   voc_normal_message_template: !input voc_resolution_message
   critical_resolution_title: !input critical_resolution_title
   co_normal_message_template: !input co_resolution_message
+  # True only when the triggering sensor transitioned from a real numeric reading.
+  # After an AIR-1 reboot or firmware update every sensor goes unavailable/unknown and
+  # then returns to a normal value, which would otherwise fire the "below clear
+  # threshold" triggers and send a spurious all-clear for every sensor.
+  from_known_reading: >-
+    {{ trigger.from_state is defined
+       and trigger.from_state is not none
+       and is_number(trigger.from_state.state) }}
 
 mode: parallel
 max_exceeded: silent
@@ -745,6 +755,8 @@ action:
       - conditions:
           - condition: trigger
             id: co_normal
+          - condition: template
+            value_template: "{{ from_known_reading }}"
         sequence:
           - service: "{{ effective_critical_service }}"
             data:
@@ -786,6 +798,8 @@ action:
             id: co2_normal
           - condition: template
             value_template: "{{ send_resolution_notification }}"
+          - condition: template
+            value_template: "{{ from_known_reading }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
@@ -811,6 +825,8 @@ action:
             id: pm25_normal
           - condition: template
             value_template: "{{ send_resolution_notification }}"
+          - condition: template
+            value_template: "{{ from_known_reading }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
@@ -836,6 +852,8 @@ action:
             id: voc_normal
           - condition: template
             value_template: "{{ send_resolution_notification }}"
+          - condition: template
+            value_template: "{{ from_known_reading }}"
         sequence:
           - service: "{{ notification_service }}"
             data:
